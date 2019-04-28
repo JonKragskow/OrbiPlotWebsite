@@ -193,6 +193,7 @@ app.layout = html.Div(children=[
 
 	html.H1(style = {'textAlign' : 'center', 'fontFamily' : 'sans-serif'},children = 'Orbiplot'),
 	html.P(style = {'textAlign' : 'center', 'fontFamily' : 'sans-serif'},children = 'Jon Kragskow 2019'),
+	html.P(style = {'textAlign' : 'center', 'fontFamily' : 'sans-serif'},children = 'Please Cite OrbiPlot if you use it!'),
 	html.P(style = {'textAlign' : 'center', 'fontFamily' : 'sans-serif'},children = 'www.kragskow.com'),
 
 	html.Div(className = 'below_title', style = {'width' : '100%', 'height' : '100%'}, children= [
