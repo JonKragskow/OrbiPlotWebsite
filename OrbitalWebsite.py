@@ -8,8 +8,7 @@ import dash_daq as daq
 from subprocess import call
 import json
 
-#####################################################################################  experimental  #####################################################################################
-
+#####################################################################################  Experimental  #####################################################################################
 
 #####################################################################################
 ################################ Orbital Mathematics ################################
@@ -24,53 +23,37 @@ def PrincipleAxisFuncp(n,r,f):
 def fp(Orb,r):
     if Orb=='2p': out = 1/(2*np.sqrt(6))
  
-    if Orb=='3p':out = (4 - 2*r/3)/(9*np.sqrt(6))
+    if Orb=='3p': out = (4 - 2*r/3)/(9*np.sqrt(6))
 
-    if Orb=='4p':out = (20 - 5*r + (r/2)**2)/(32*np.sqrt(15))
+    if Orb=='4p': out = (20 - 5*r + (r/2)**2)/(32*np.sqrt(15))
 
-    if Orb=='5p':out = (120 - 90*(2*r/5) + 18*(2*r/5)**2 - (2*r/5)**3)/(150*np.sqrt(30))
+    if Orb=='5p': out = (120 - 90*(2*r/5) + 18*(2*r/5)**2 - (2*r/5)**3)/(150*np.sqrt(30))
 
-    if Orb=='6p':out = (840 - 840*r/3 + 252*(r/3)**2 - 28*(r/3)**3 + (r/3)**4)/(432*np.sqrt(210))
+    if Orb=='6p': out = (840 - 840*r/3 + 252*(r/3)**2 - 28*(r/3)**3 + (r/3)**4)/(432*np.sqrt(210))
     return out
 
 ############################d Orbital Wavefunction functions#########################
-def zFunc(n,r,f):
-    out = n*np.exp(r/n)*0.003*np.sqrt(np.pi/3)/abs(f)
-    return out
 
-def f3d(r):
-    out = 1/(9*np.sqrt(30))
-    return out
+def fd(Orb,r): 
+    if Orb=='3d': out = 1/(9*np.sqrt(30))
 
-def f4d(r):
-    out = (6-r/2)/(96*np.sqrt(5))
-    return out
+    if Orb=='4d': out = (6-r/2)/(96*np.sqrt(5))
 
-def f5d(r):
-    out = (42 - 28*r/5 + (2*r/5)**2)/(150*np.sqrt(70))
-    return out
+    if Orb=='5d': out = (42 - 28*r/5 + (2*r/5)**2)/(150*np.sqrt(70))
 
-def f6d(r):
-    out = (336 - 168*(r/3) + 24*(r/3)**2 - (r/3)**3)/(864*np.sqrt(105))
+    if Orb=='6d': out = (336 - 168*(r/3) + 24*(r/3)**2 - (r/3)**3)/(864*np.sqrt(105))
     return out
 
 ############################f Orbital Wavefunction functions#########################
-#def zFunc(n,r,f):
-#    out = n*np.exp(r/n)*0.003*np.sqrt(np.pi/3)/abs(f)
-#    return out
+
+#def ff(Orb,r): 
+#    if Orb=='4f': out = 
 #
+#    if Orb=='5f': out = 
 #
-#def f4f(r):
-#    out = 
+#    if Orb=='6f': out = 
 #    return out
-#
-#def f5f(r):
-#    out = 
-#    return out
-#
-#def f6f(r):
-#    out = 
-#    return out
+
 
 
 def OrbDomain(Orb):
@@ -79,14 +62,14 @@ def OrbDomain(Orb):
 
 
 #####2p surface bounds#####
-    if Orb=='2p':
+    if Orb == '2p':
         p2LowerBound1 = 0.0305424
         p2UpperMinusLowerBound1 = 11.973154-0.03054255
        
-        DomainConstants = [p2LowerBound1,p2UpperMinusLowerBound1]
+        DomainConstants = [p2LowerBound1, p2UpperMinusLowerBound1]
 
 #####3p surface bounds#####
-    if Orb=='3p':
+    if Orb == '3p':
 
         p3LowerBound1 = 0.0521075737439532
         p3UpperMinusLowerBound1 =  5.5936882283563
@@ -94,7 +77,7 @@ def OrbDomain(Orb):
         p3LowerBound2 = 6.40190923834268
         p3UpperMinusLowerBound2 =  14.3297971165078
 
-        DomainConstants = [p3LowerBound1,p3UpperMinusLowerBound1,p3LowerBound2,p3UpperMinusLowerBound2]
+        DomainConstants = [p3LowerBound1, p3UpperMinusLowerBound1, p3LowerBound2, p3UpperMinusLowerBound2]
     
 #####4p surface bounds#####
 
@@ -102,12 +85,14 @@ def OrbDomain(Orb):
     
         p4LowerBound1 = 0.0791783
         p4UpperMinusLowerBound1 = 4.9947867
+
         p4LowerBound2 = 6.072543
         p4UpperMinusLowerBound2 = 6.791527
+
         p4LowerBound3 = 16.566121
         p4UpperMinusLowerBound3 = 13.745981
 
-        DomainConstants = [p4LowerBound1,p4UpperMinusLowerBound1,p4LowerBound2,p4UpperMinusLowerBound2,p4LowerBound3,p4UpperMinusLowerBound3]
+        DomainConstants = [p4LowerBound1, p4UpperMinusLowerBound1, p4LowerBound2, p4UpperMinusLowerBound2, p4LowerBound3, p4UpperMinusLowerBound3]
     
 #####5p surface bounds#####
 
@@ -120,12 +105,12 @@ def OrbDomain(Orb):
         p5UpperMinusLowerBound2 = 5.3146969
         
         p5LowerBound3 = 16.046327
-        p5UpperMinusLowerBound3 = 21.13525524-16.046327
+        p5UpperMinusLowerBound3 = 6.007799789
         
-        p5LowerBound4 =  35.12342545
-        p5UpperMinusLowerBound4 = 26
+        p5LowerBound4 = 37.13 #broken
+        p5UpperMinusLowerBound4 = 26.9003 #broken
 
-        DomainConstants = [p5LowerBound1,p5UpperMinusLowerBound1,p5LowerBound2,p5UpperMinusLowerBound2,p5LowerBound3,p5UpperMinusLowerBound3,p5LowerBound4,p5UpperMinusLowerBound4]
+        DomainConstants = [p5LowerBound1, p5UpperMinusLowerBound1, p5LowerBound2, p5UpperMinusLowerBound2, p5LowerBound3, p5UpperMinusLowerBound3, p5LowerBound4, p5UpperMinusLowerBound4]
     
 #####6p surface bounds#####
     
@@ -146,8 +131,100 @@ def OrbDomain(Orb):
         p6LowerBound5 = 41.5770
         p6UpperMinusLowerBound5 = 43.0776
     
-        DomainConstants = [p6LowerBound1,p6UpperMinusLowerBound1,p6LowerBound2,p6UpperMinusLowerBound2,p6LowerBound3,p6UpperMinusLowerBound3,p6LowerBound4,p6UpperMinusLowerBound4,p6LowerBound5,p6UpperMinusLowerBound5]
+        DomainConstants = [p6LowerBound1, p6UpperMinusLowerBound1, p6LowerBound2, p6UpperMinusLowerBound2, p6LowerBound3, p6UpperMinusLowerBound3, p6LowerBound4, p6UpperMinusLowerBound4, p6LowerBound5, p6UpperMinusLowerBound5]
 
+#####3d surface bounds#####
+#    if Orb == '3d':
+#
+#        d3LowerBound1 = 
+#        d3UpperMinusLowerBound1 =  
+#       
+#        DomainConstants = [d3LowerBound1, d3UpperMinusLowerBound1]
+#    
+######4d surface bounds#####
+#
+#    if Orb=='4d':
+#    
+#        d4LowerBound1 = 
+#        d4UpperMinusLowerBound1 = 
+#
+#        d4LowerBound2 = 
+#        d4UpperMinusLowerBound2 = 
+#
+#        DomainConstants = [d4LowerBound1, d4UpperMinusLowerBound1, d4LowerBound2, d4UpperMinusLowerBound2]
+#    
+######5d surface bounds#####
+#
+#    if Orb=='5d':
+#    
+#        d5LowerBound1 =
+#        d5UpperMinusLowerBound1 = 
+#        
+#        d5LowerBound2 = 
+#        d5UpperMinusLowerBound2 = 
+#        
+#        d5LowerBound3 = 
+#        d5UpperMinusLowerBound3 = 
+#        
+#        DomainConstants = [d5LowerBound1, d5UpperMinusLowerBound1, d5LowerBound2, d5UpperMinusLowerBound2, d5LowerBound3, d5UpperMinusLowerBound3]
+#    
+######6d surface bounds#####
+#    
+#    if Orb=='6d':
+#
+#        d6LowerBound1 = 
+#        d6UpperMinusLowerBound1 = 
+#        
+#        d6LowerBound2 = 
+#        d6UpperMinusLowerBound2 = 
+#    
+#        d6LowerBound3 = 
+#        d6UpperMinusLowerBound3 = 
+#        
+#        d6LowerBound4 = 
+#        d6UpperMinusLowerBound4 = 
+#    
+#        DomainConstants = [d6LowerBound1, d6UpperMinusLowerBound1, d6LowerBound2, d6UpperMinusLowerBound2, d6LowerBound3, d6UpperMinusLowerBound3, d6LowerBound4, d6UpperMinusLowerBound4]
+#
+######4f surface bounds#####
+#
+#    if Orb=='4f':
+#    
+#        f4LowerBound1 = 
+#        f4UpperMinusLowerBound1 = 
+#
+#        DomainConstants = [f4LowerBound1, f4UpperMinusLowerBound1]
+#    
+######5f surface bounds#####
+#
+#    if Orb=='5f':
+#    
+#        f5LowerBound1 = 
+#        f5UpperMinusLowerBound1 =
+#        
+#        f5LowerBound2 = 
+#        f5UpperMinusLowerBound2 = 
+#        
+#        f5LowerBound3 =
+#        f5UpperMinusLowerBound3 = 
+#        
+#        DomainConstants = [f5LowerBound1, f5UpperMinusLowerBound1, f5LowerBound2, f5UpperMinusLowerBound2]
+#    
+######6f surface bounds#####
+#    
+#    if Orb=='6f':
+#
+#        f6LowerBound1 = 
+#        f6UpperMinusLowerBound1 = 
+#        
+#        f6LowerBound2 = 
+#        f6UpperMinusLowerBound2 = 
+#    
+#        f6LowerBound3 = 
+#        f6UpperMinusLowerBound3 = 
+#    
+#        DomainConstants = [f6LowerBound1, f6UpperMinusLowerBound1, f6LowerBound2, f6UpperMinusLowerBound2, f6LowerBound3, f6UpperMinusLowerBound3]
+#
     return DomainConstants
 
 ############################Orbital Wavefunction Calculation#########################
@@ -159,48 +236,56 @@ def OrbCalc(Orb):
     n = float(letter.strip('p'))
 
     #Arrays for parametric equations
-    v = np.linspace(0, 1, 50)
-    u = np.linspace(0, 2.*np.pi, 50)
+    v = np.linspace(0, 1, 70)
+    u = np.linspace(0, 2.*np.pi, 70)
+
     x = np.zeros([np.size(u),np.size(v)])
     y = np.zeros([np.size(u),np.size(v)])
+
     zp = np.zeros([np.size(u),np.size(v)])
     zm = np.zeros([np.size(u),np.size(v)])
 
     data = []
 
-#Plot first radial portion of p orbital
+#Plot different radial portions of orbital
 
     t=0
+    flag = True
 
     while t <= (2*n-4):
 
-#n     = 2 3 4 5 6
-#lobes = 2 4 5 6 10
-#t     = 0 2 4 6 8
-
+		#n     = 2 3 4 5 6
+        #2n    = 4 6 8 10 12
+        #2n-4  = 0 2 4 6 8
+		#lobes = 2 4 6 8 10
+		#t     = 0 2 4 6 8
+		
         for vele,vval in enumerate(v):
             for uele,uval in enumerate(u):
                 x[vele,uele] = np.sqrt((OrbDomain(Orb)[t+1]*vval + OrbDomain(Orb)[t])**2 - PrincipleAxisFuncp(n,OrbDomain(Orb)[t+1]*vval+OrbDomain(Orb)[t],fp(Orb,OrbDomain(Orb)[t+1]*vval+OrbDomain(Orb)[t]))**2)*np.cos(uval)
                 y[vele,uele] = np.sqrt((OrbDomain(Orb)[t+1]*vval + OrbDomain(Orb)[t])**2 - PrincipleAxisFuncp(n,OrbDomain(Orb)[t+1]*vval+OrbDomain(Orb)[t],fp(Orb,OrbDomain(Orb)[t+1]*vval+OrbDomain(Orb)[t]))**2)*np.sin(uval)
+                
                 zp[vele,uele] = PrincipleAxisFuncp(n,OrbDomain(Orb)[t+1]*vval + OrbDomain(Orb)[t],fp(Orb,OrbDomain(Orb)[t+1]*vval+OrbDomain(Orb)[t]));
-                zm[vele,uele] = -PrincipleAxisFuncp(n,OrbDomain(Orb)[t+1]*vval + OrbDomain(Orb)[t],fp(Orb,OrbDomain(Orb)[t+1]*vval+OrbDomain(Orb)[t]));
+                zm[vele,uele] = -zp[vele,uele];
         
-        t = t+2
-        data0 = go.Surface(x=x, y=y, z=zp,colorscale= [[0, 'rgb(109,0,157)'], [1,'rgb(109,0,157)']],showscale=False)
-        data1 = go.Surface(x=x, y=y, z=zm,colorscale= [[0, 'rgb(255,204,51)'], [1,'rgb(255,204,51)']],showscale=False)
-    
+        t += 2
+        flag = not flag
+
+        if flag == True:
+            data0 = go.Surface(x=x, y=y, z=zp, colorscale= [[0, 'rgb(109,0,157)'], [1,'rgb(109,0,157)']],showscale=False)
+            data1 = go.Surface(x=x, y=y, z=zm, colorscale= [[0, 'rgb(255,204,51)'], [1,'rgb(255,204,51)']],showscale=False)
+
+        elif flag == False:
+            data0 = go.Surface(x=x, y=y, z=zm, colorscale= [[0, 'rgb(109,0,157)'], [1,'rgb(109,0,157)']],showscale=False)
+            data1 = go.Surface(x=x, y=y, z=zp, colorscale= [[0, 'rgb(255,204,51)'], [1,'rgb(255,204,51)']],showscale=False)
+        
         data.append(data0)
-        data.append(data1)
-        
+        data.append(data1)     
 
     return data
 
 
-
-    ################################### end experimental
-
-###Functions for function
-
+###Functions for Radial Wave Functions
 
 def s_1(r,mode, zeff):
 	rho = 2.*r/1.  * zeff
@@ -417,7 +502,7 @@ app.layout = html.Div(children=[
 							{'label': '5f', 'value': '5f'},
 							{'label': '6f', 'value': '6f'},
 						],
-						values=['1s','2p','3d','4f'],
+						values=['5p'],
 						labelStyle={'maxwidth' : '20px'}
 					),
 
@@ -433,7 +518,7 @@ app.layout = html.Div(children=[
 							{'label': 'Radial Wave Function', 'value': 'RWF'},
 							{'label': 'Experimental 3D Wave Function', 'value': '3DWF'}
 						],
-						value='RDF',
+						value='3DWF',
 						labelStyle={'width' : '10px'}
 					),
 
@@ -537,7 +622,6 @@ app.layout = html.Div(children=[
 
 				]),
 
-
 				html.Div(className = 'sliders box', style = {'width' : '29%' , 'padding-right' : '2%' ,'float' : 'right','display' : 'inline-block'}, children = [
 
 					html.P(children = 'Line Width'),
@@ -562,14 +646,6 @@ app.layout = html.Div(children=[
 	])	
 ])
 ])
-
-
-
-
-
-
-
-
 
 
 
@@ -606,8 +682,7 @@ def UpdatePlot(Orbitals, WFType, Thickness, TextSize, xgridinput, ygridinput, ze
 		WFName = 'Radial Wavefunction'#'$R(r)$' 
 	
 
-		layout = go.Layout(
-	    title='Parametric Plot',
+	layout = go.Layout(
 	    hovermode=False,
 	    dragmode="orbit",
 	    scene=dict(
@@ -712,6 +787,8 @@ def SaveOptions(PlotFormat, PlotHeight, PlotWidth):
 		'hoverClosestCartesian',
 		'toggleSpikelines',
 		'zoom2d',
+		'zoom3d',
+		'pan3d',
 		'pan2d',
 		'select2d',
 		'zoomIn2d',
