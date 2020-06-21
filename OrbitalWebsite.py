@@ -519,6 +519,38 @@ functiondict = {'1s': s_1,
                 '6f': f_6}
 
 
+##################################################################################################################################
+############################################################ Webpage layout ######################################################
+##################################################################################################################################
+
+#Build the webpage layout
+app = dash.Dash(__name__,external_scripts=[
+  'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML',
+])
+
+# app.css.append_css({"external_url": "https://max.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"})
+
+# Change header 
+# %thing% are defined by dash and are replaced at runtime
+app.index_string = r'''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>Orbiplot</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
 
 orbital_plot_options = [html.Div(className = "container", 
          style = {
@@ -975,62 +1007,7 @@ plot_save_options = [
                               ]
                               )]
 
-def toggle_pob(on_off) :
-
-    if on_off == 'on' :
-        return   {'display' : 'inline-block' , 
-                'padding-left':'5%', 
-                'padding-bottom':'5%' , 
-                'padding-right':'5%', 
-                'width' : '90%', 
-                'borderStyle' : 'solid', 
-                'borderWidth' : '0px',
-                'textAlign' : 'center'}
-    else :
-        return {'display' : 'none' , 
-                'padding-left':'5%', 
-                'padding-bottom':'5%' , 
-                'padding-right':'5%', 
-                'width' : '90%', 
-                'borderStyle' : 'solid', 
-                'borderWidth' : '0px',
-                'textAlign' : 'center'}
-
-
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-
-
-
-#Build the webpage layout
-app = dash.Dash(__name__)
-
-# app.css.append_css({"external_url": "https://max.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"})
-
-# Change header 
-# %thing% are defined by dash and are replaced at runtime
-app.index_string = r'''
-<!DOCTYPE html>
-<html>
-    <head>
-        {%metas%}
-        <title>Orbiplot</title>
-        {%favicon%}
-        {%css%}
-    </head>
-    <body>
-        {%app_entry%}
-        <footer>
-            {%config%}
-            {%scripts%}
-            {%renderer%}
-        </footer>
-    </body>
-</html>
-'''
-
-
+# Layout of webpage
 app.layout = html.Div(children=[
 
 html.Title(children='orbiplot'),
@@ -1125,6 +1102,33 @@ html.Footer(style = {
                      ]
            )
 ])
+
+def toggle_pob(on_off) :
+
+    if on_off == 'on' :
+        return   {'display' : 'inline-block' , 
+                'padding-left':'5%', 
+                'padding-bottom':'5%' , 
+                'padding-right':'5%', 
+                'width' : '90%', 
+                'borderStyle' : 'solid', 
+                'borderWidth' : '0px',
+                'textAlign' : 'center'}
+    else :
+        return {'display' : 'none' , 
+                'padding-left':'5%', 
+                'padding-bottom':'5%' , 
+                'padding-right':'5%', 
+                'width' : '90%', 
+                'borderStyle' : 'solid', 
+                'borderWidth' : '0px',
+                'textAlign' : 'center'}
+
+##################################################################################################################################
+########################################################### Callbacks ############################################################
+##################################################################################################################################
+
+
 #Callback which defines what changes ('figure') and what causes the change (Checkbox being pressed)
 @app.callback([ddep.Output('RDF_Graph', 'figure'),
                ddep.Output('RDF_Graph', 'config'),
@@ -1145,36 +1149,116 @@ html.Footer(style = {
 def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
                ygridinput, upperxlim, lowerxlim,PlotFormat,
                PlotHeight, PlotWidth):
-    # If only the save options have changed then return new config
 
-    button_stuff =  {'toImageButtonOptions': 
-                        {
-                        'format': PlotFormat, 
-                        'filename': 'Radial Distribution Functions',
-                        'height': PlotHeight,
-                        'width': PlotWidth,
-                        }, 
-                      'modeBarButtonsToRemove':
-                          [
-                          'sendDataToCloud',
-                          'autoScale2d',
-                          'resetScale2d',
-                          'hoverClosestCartesian',
-                          'toggleSpikelines',
-                          'zoom2d',
-                          'zoom3d',
-                          'pan3d',
-                          'pan2d',
-                          'select2d',
-                          'zoomIn2d',
-                          'zoomOut2d',
-                          'hovermode',
-                          'hoverCompareCartesian'
-                          ],
-                      'displaylogo': False,
-                      'displayModeBar' : True,
-                    }
+    # If xlims nonetype then set to default
+    if lowerxlim == None:
+        lowerxlim = 0
 
+    if upperxlim == None:
+        upperxlim = lowerxlim + 80
+
+    #Read type of wavefunction being requested and set axis names
+    if FuncType == 'RDF':
+        WFFlag = 1
+        WFName = r'$\text{Radial Distribution Function}  \ \ \ 4\pi r R(r)$'
+    if FuncType == 'RWF':
+        WFFlag = 2
+        WFName = r'$\text{Radial Wavefunction}  \ \ \ R(r) $\n'
+    if FuncType == '3DWF':
+        WFFlag = 3
+        WFName = ''
+
+    # Set layout of plot box
+    # Basically turn all the stupid crap off
+    layout = common_ax_config()
+
+    # Plot radial wavefunction or radial distribution function
+    if WFFlag == 2 or WFFlag == 1:
+        return {
+                'data': get_2d_plots(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness),
+                'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName)
+                }, modebar_config(PlotFormat, PlotHeight, PlotWidth), toggle_pob('on')
+
+    # Plot wavefunction isosurface
+    # use first selection
+    if WFFlag == 3 :
+        if len(Orbitals) > 0 and Orbitals[0].find('p') != -1:
+            return  {
+                     'data'  : OrbCalc(Orbitals[0]),
+                     'layout': layout
+                    }, modebar_config(PlotFormat, PlotHeight, PlotWidth), toggle_pob('off')
+        else:
+            return {
+                    'data'   : None,
+                    'layout' : layout
+                    }, modebar_config(PlotFormat, PlotHeight, PlotWidth), toggle_pob('off')
+
+
+def get_2d_plots(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
+
+    # Calculate plot for each orbital and add to list
+    traces = []
+    if len(Orbitals) > 0:
+        for n in range(0,len(Orbitals)):
+            id = Orbitals[n]
+            traces.append(go.Scatter(x = np.linspace(lowerxlim,upperxlim,1000), 
+                                     y = functiondict[id](np.linspace(lowerxlim,upperxlim,1000), WFFlag, 1.), 
+                                     line = dict(width = Thickness),
+                                     name = id, 
+                                     hoverinfo = 'none')
+                                    )
+
+    return traces
+
+
+def common_ax_config():
+    return go.Layout(
+                     hovermode=False,
+                     dragmode="orbit",
+                     scene=dict(
+                                xaxis=dict(
+                                           gridcolor='rgb(255, 255, 255)',
+                                           zerolinecolor='rgb(255, 255, 255)',
+                                           showbackground=False,
+                                           showgrid=False,
+                                           zeroline=False,
+                                           title='',
+                                           showline=False,
+                                           ticks='',
+                                           showticklabels=False,
+                                           backgroundcolor='rgb(230, 230,230)'
+                                          ),
+                                yaxis=dict(
+                                           gridcolor='rgb(255, 255, 255)',
+                                           zerolinecolor='rgb(255, 255, 255)',
+                                           showgrid=False,
+                                           zeroline=False,
+                                           title='',
+                                           showline=False,
+                                           ticks='',
+                                           showticklabels=False,
+                                           backgroundcolor='rgb(230, 230,230)'
+                                          ),
+                                zaxis=dict(
+                                           gridcolor='rgb(255, 255, 255)',
+                                           zerolinecolor='rgb(255, 255, 255)',
+                                           showgrid=False,
+                                           title='',
+                                           zeroline=False,
+                                           showline=False,
+                                           ticks='',
+                                           showticklabels=False,
+                                           backgroundcolor='rgb(230, 230,230)'
+                                          ),
+                                aspectratio=dict(
+                                                 x=1,
+                                                 y=1,
+                                                 z=1
+                                                )
+                                )
+                    )
+
+def ax_config_2d(xgridinput, ygridinput, TextSize, WFName):
 
     #Turn on x axis gridlines
     if xgridinput == ['xgridval']:
@@ -1182,122 +1266,94 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
     else:
         xgrid = False
 
-
     #Turn on y axis gridlines
     if ygridinput == ['ygridval']:
         ygrid = True
     else:
         ygrid = False
 
-
-    #Read type of wavefunction being requested and set axis names
-    if FuncType == 'RDF':
-        WFFlag = 1
-        WFName = 'Radial Distribution Function' #' 4\pi r R(r)'
-    if FuncType == 'RWF':
-        WFFlag = 2
-        WFName = 'Radial Wavefunction'#'$R(r)$' 
-    if FuncType == '3DWF':
-        WFFlag = 3
-        WFName = 'Radial Wavefunction'#'$R(r)$' 
-    
-
-    #Set layout options common to all 3 wavefunctions
-    layout = go.Layout(
-        hovermode=False,
-        dragmode="orbit",
-        scene=dict(
-            xaxis=dict(
-                gridcolor='rgb(255, 255, 255)',
-                zerolinecolor='rgb(255, 255, 255)',
-                showbackground=False,
-                showgrid=False,
-                zeroline=False,
-                title='',
-                showline=False,
-                ticks='',
-                showticklabels=False,
-                backgroundcolor='rgb(230, 230,230)'
-            ),
-            yaxis=dict(
-                gridcolor='rgb(255, 255, 255)',
-                zerolinecolor='rgb(255, 255, 255)',
-                showgrid=False,
-                zeroline=False,
-                title='',
-                showline=False,
-                ticks='',
-                showticklabels=False,
-                backgroundcolor='rgb(230, 230,230)'
-            ),
-            zaxis=dict(
-                gridcolor='rgb(255, 255, 255)',
-                zerolinecolor='rgb(255, 255, 255)',
-                showgrid=False,
-                title='',
-                zeroline=False,
-                showline=False,
-                ticks='',
-                showticklabels=False,
-                backgroundcolor='rgb(230, 230,230)'
-            ),aspectratio=dict(
-                x=1,
-                y=1,
-                z=1
-            )
-        )
+    return go.Layout(
+                     xaxis = {
+                              'autorange' : True,
+                              'showgrid'  : xgrid,
+                              'zeroline'  : False,
+                              'showline'  : True,
+                              'title' : {
+                                         'text' : r'$\text{Distance}  \ \ (a_0)$',
+                                         'font' :
+                                                 {
+                                                  'size' : TextSize
+                                                 } 
+                                        },
+                              'ticks' :'outside',
+                              'tickfont' : 
+                                           {
+                                            'size' : TextSize
+                                           },
+                              'showticklabels' : True
+                             },
+                     yaxis = {
+                              'autorange' :True,
+                              'showgrid' :ygrid,
+                              'zeroline' :False,
+                              'fixedrange' : True,
+                              'title' : 
+                                        {
+                                         'text' : WFName,
+                                         'font' : 
+                                                  {
+                                                   'size' : TextSize
+                                                  }
+                                        },
+                              'title_standoff' : 100,
+                              'showline' :True,
+                              'ticks' :'outside',
+                              'tickfont' : 
+                                          {
+                                           'size' : TextSize
+                                          },
+                              'showticklabels' :True
+                             },
+                     legend = {
+                               'font' : 
+                                       {
+                                        'size' : TextSize
+                                       }
+                              }
     )
 
-    if lowerxlim == None:
-        lowerxlim = 0
+def modebar_config(PlotFormat, PlotHeight, PlotWidth):
 
-    if upperxlim == None:
-        upperxlim = lowerxlim + 80
+    return  {
+            'toImageButtonOptions': 
+              {
+              'format': PlotFormat, 
+              'filename': 'Radial Distribution Functions',
+              'height': PlotHeight,
+              'width': PlotWidth,
+              }, 
+            'modeBarButtonsToRemove':
+                [
+                'sendDataToCloud',
+                'autoScale2d',
+                'resetScale2d',
+                'hoverClosestCartesian',
+                'toggleSpikelines',
+                'zoom2d',
+                'zoom3d',
+                'pan3d',
+                'pan2d',
+                'select2d',
+                'zoomIn2d',
+                'zoomOut2d',
+                'hovermode',
+                'hoverCompareCartesian'
+                ],
+            'displaylogo': False,
+            'displayModeBar' : True,
+            }
 
 
-    #Plot radial wavefunction or radial distribution function
-    if WFFlag == 2 or WFFlag == 1:
-        traces = []
-        if len(Orbitals) > 0:
-            for n in range(0,len(Orbitals)):
-                id = Orbitals[n]
-                traces.append(go.Scatter(x = np.linspace(lowerxlim,upperxlim,1000), y = functiondict[id](np.linspace(lowerxlim,upperxlim,1000), WFFlag, 1.), line = dict(width = Thickness), name = id, hoverinfo = 'none'))
-    
-        return {'data': traces,
-            'layout': go.Layout(
-                xaxis = {
-                    'autorange' : True,
-                    'showgrid' : xgrid,
-                    'zeroline' : False,
-                    'showline' : True,
-                    'title' : {'text' : 'Distance / a.u.', 'font' : {'size' : TextSize} },
-                    'ticks' :'outside',
-                    'tickfont' : {'size' : TextSize},
-                    'showticklabels' : True
-                },
-                yaxis = {
-                    'autorange' :True,
-                    'showgrid' :ygrid,
-                    'zeroline' :False,
-                    'fixedrange' : True,
-                    'title' : {'text' : WFName, 'font' : {'size' : TextSize} },
-                    'showline' :True,
-                    'ticks' :'outside',
-                    'tickfont' : {'size' : TextSize},
-                    'showticklabels' :True
-                    },
-                legend = {
-                    'font' : {'size' : TextSize}
-                }
-            )
-            }, button_stuff, toggle_pob('on')
-
-    #Plot wavefunction isosurface
-    if WFFlag == 3 :
-        if len(Orbitals) > 0 and Orbitals[0].find('p') != -1:
-            return  {'data': OrbCalc(Orbitals[0]),'layout': layout}, button_stuff, toggle_pob('off')
-        else:
-            return {'data' : None, 'layout' : layout}, button_stuff, toggle_pob('off')
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8051)
+    app.run_server(debug=True, port=8052)
