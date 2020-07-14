@@ -8,17 +8,27 @@ import plotly.io as pio
 import dash.dependencies as ddep
 from subprocess import call
 import json
+from plotly.subplots import make_subplots
 
 
 ####################################################################################################
 ####################################### Radial Functions ###########################################
 ####################################################################################################
 
-############################ p Orbital functions #########################
-
-def PrincipleAxisFuncp(n,r,f,c):
+def p_z_ax(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
 
+def d_z_ax_pos(n,r,f,c): 
+    return np.sqrt(r**2 * 1./3. + n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1./(3.*np.abs(f)))
+
+def d_z_ax_neg(n,r,f,c):
+    return np.sqrt(r**2 * 1./3. - n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1./(3.*np.abs(f)))
+
+def radial_s(Orb,r):
+    # !!! Radial Wavefunctions of p orbitals
+    if Orb=='1s': 
+        return 2.*np.exp(-r)
+ 
 def radial_p(Orb,r):
     # !!! Radial Wavefunctions of p orbitals
     if Orb=='2p': 
@@ -40,16 +50,16 @@ def radial_p(Orb,r):
 
 def radial_d(Orb,r): 
     # !!! Radial Wavefunctions of d orbitals
-    if Orb=='3d': 
+    if Orb.find('3d_z2') == 0: 
         return 1./(9.*np.sqrt(30.))
 
-    if Orb=='4d': 
+    if Orb.find('4d_z2') == 0: 
         return (6.-r/2.)/(96.*np.sqrt(5.))
 
-    if Orb=='5d': 
+    if Orb.find('5d_z2') == 0: 
         return (42. - 28.*r/5. + (2.*r/5.)**2.)/(150.*np.sqrt(70.))
 
-    if Orb=='6d': 
+    if Orb.find('6d_z2') == 0: 
         return (336. - 168.*(r/3.) + 24.*(r/3.)**2. - (r/3.)**3.)/(864.*np.sqrt(105.))
 
 ############################f Orbital Wavefunction functions#########################
@@ -70,12 +80,126 @@ def radial_d(Orb,r):
 ########################################## Lobe bounds #############################################
 ####################################################################################################
 
+def dz_domain(Orb):
+    # !!! Returns an array containing the bounds
+    # of r for each lobe of the requested dz2 orbital
+
+    if Orb.find('3d_z2') == 0:
+
+        num_lobes = 2
+
+        lobe_1_lower =  0.8347013549589228 
+        lobe_1_upper = 19.84715220152567 
+
+        ring_1_lower = 1.269074408199
+        ring_1_upper = 16.749590243795
+
+        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
+        ring_domains = np.array([[ring_1_lower, ring_1_upper]])
+
+    if Orb.find('4d_z2') == 0:
+
+        num_lobes = 4
+
+        lobe_1_lower = 0.9717206679891478 
+        lobe_1_upper = 10.947850494510153
+
+        lobe_2_lower = 13.281145273906876  
+        lobe_2_upper = 30.71438185359193 
+
+        ring_1_lower = 1.506089675248620585
+        ring_1_upper = 10.009091147538
+
+        ring_2_lower = 15.13702469934
+        ring_2_upper = 24.553806957999903
+
+        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[lobe_2_lower, lobe_2_upper]])
+        ring_domains = np.array([[ring_1_lower, ring_1_upper],[ring_2_lower, ring_2_upper]])
+
+    if Orb.find('5d_z2') == 0:
+
+        num_lobes = 6
+
+        lobe_1_lower = 0.31412614081764606 
+        lobe_1_upper = 10.755951991517627 
+
+        lobe_2_lower = 11.018457454488443 
+        lobe_2_upper = 23.74309091422983 
+
+        lobe_3_lower = 24.49747212710316 
+        lobe_3_upper = 64.21693289152138 
+
+        ring_1_lower = 0.4549182747066
+        ring_1_upper = 10.629142563719
+
+        ring_2_lower = 11.15480678351499755
+        ring_2_upper = 23.38146805779990
+
+        ring_3_lower = 24.8948878699568
+        ring_3_upper = 58.470343060020994
+
+        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],
+                                 [lobe_2_lower, lobe_2_upper],
+                                 [lobe_3_lower, lobe_3_upper]])
+        ring_domains = np.array([[ring_1_lower, ring_1_upper],
+                                 [ring_2_lower, ring_2_upper],
+                                 [ring_3_lower, ring_3_upper]])
+
+    if Orb.find('6d_z2') == 0:
+
+        num_lobes = 8
+
+        lobe_1_lower = 0.3565338974235
+        lobe_1_upper = 10.272518865906342 
+
+        lobe_2_lower = 10.590710660732219 
+        lobe_2_upper = 21.562394639355578 
+
+        lobe_3_lower = 22.37410716607108
+        lobe_3_upper = 38.69673874491944 
+
+        lobe_4_lower = 40.56767789682293 
+        lobe_4_upper = 85.63716821662403 
+
+        ring_1_lower = 0.518213089425
+        ring_1_upper = 10.120097300417532
+
+        ring_2_lower = 10.75781337004409
+        ring_2_upper = 21.175221605007522
+
+        ring_3_lower = 22.8072828487972
+        ring_3_upper = 37.8107854483668
+
+        ring_4_lower = 41.59113348635129
+        ring_4_upper = 77.715204335756
+
+        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],
+                                 [lobe_2_lower, lobe_2_upper],
+                                 [lobe_3_lower, lobe_3_upper],
+                                 [lobe_4_lower, lobe_4_upper]])
+        ring_domains = np.array([[ring_1_lower, ring_1_upper],
+                                 [ring_2_lower, ring_2_upper],
+                                 [ring_3_lower, ring_3_upper],
+                                 [ring_4_lower, ring_4_upper]])
+
+
+
+
+    return lobe_domains, ring_domains, num_lobes
 
 def r_domain(Orb):
     # !!! Returns an array containing the bounds of r for each lobe of the requested orbital
 
+    if Orb == '1s':
+        num_lobes = 2
+        lobe_1_lower = 0.01
+        lobe_1_upper = 0.05
+
+        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
+
 #####2p orbital#####
     if Orb == '2p':
+        num_lobes = 2
         lobe_1_lower = 0.030542415534
         lobe_1_upper = 11.973154175074
        
@@ -83,18 +207,19 @@ def r_domain(Orb):
 
 #####3p orbital#####
     if Orb == '3p':
-
+        num_lobes = 4
         lobe_1_lower = 0.0521008719026 
         lobe_1_upper =  5.6457958052515
         
         lobe_2_lower = 6.4019092339593
-        lobe_2_upper = np.float128(20.7317063563592)
+        lobe_2_upper = 20.7317063563592
 
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper]])
     
 #####4p orbital#####
 
     if Orb=='4p':
+        num_lobes = 6
 
         lobe_1_lower = 0.0791782710855
         lobe_1_upper = 5.0739651680262
@@ -110,6 +235,7 @@ def r_domain(Orb):
 #####5p orbital#####
 
     if Orb=='5p':
+        num_lobes = 8
     
         lobe_1_lower = 0.0105650461441 
         lobe_1_upper = 5.2893751552301
@@ -128,7 +254,7 @@ def r_domain(Orb):
 #####6p orbital#####
     
     if Orb=='6p':
-
+        num_lobes = 10
 
         lobe_1_lower = 0.0138230698659
         lobe_1_upper = 5.1856979119147
@@ -143,32 +269,25 @@ def r_domain(Orb):
         lobe_4_upper = 40.5262363941473
         
         lobe_5_lower = 43.0775334433834
-        lobe_5_upper = np.float128(84.65464)
+        lobe_5_upper = 84.65464 # Fix me!!!
     
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper],[ lobe_4_lower, lobe_4_upper],[ lobe_5_lower, lobe_5_upper]])
 
 #####3d orbital#####
 
     if Orb == '3d':
+
+        num_lobes = 2
+
         lobe_1_lower = 0.0305424
         lobe_1_upper = 11.973154-0.03054255
        
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
 
-#####3d_z2 orbital#####
-
-    if Orb == '3d_z2':
-
-        lobe_1_lower = 0.8347159282237
-        lobe_1_upper = 19.847152201525
-        
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
-
 
 #####4d orbitals other than z2#####
 
-    if Orb == '4d_nz2':
+    if Orb == '4d':
 
         lobe_1_lower = 0.9717206679892
         lobe_1_upper = 10.9478504945101
@@ -178,27 +297,9 @@ def r_domain(Orb):
 
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper]])
     
-#####4d_z2 orbital#####
-
-    if Orb == '4d_z2':
-
-        lobe_1_lower = 0.412143781754179
-        lobe_1_upper = 11.4749904407017
-        
-        lobe_2_lower = 0.39411
-        lobe_2_upper = 11.382175
-        
-        lobe_3_lower = 12.23238573
-        lobe_3_upper = 29.08904
-        
-        lobe_4_lower = 12.11503
-        lobe_4_upper = 33.23954
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper],[ lobe_4_lower, lobe_4_upper]])
-
 #####5d orbitals other than z2#####
 
-    if Orb=='5d_nz2':
+    if Orb=='5d':
 
         lobe_1_lower = 0.6156
         lobe_1_upper = 10.3787
@@ -211,31 +312,6 @@ def r_domain(Orb):
 
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper]])
     
-#####5d_z2 orbital#####
-
-    if Orb=='5d_z2':
-    
-        lobe_1_lower = 0.330 
-        lobe_1_upper = 10.42595
-
-        lobe_2_lower = 0.5
-        lobe_2_upper = 10.129142
-
-        lobe_3_lower = 11.15481
-        lobe_3_upper = 12.22665
-
-        lobe_4_lower = 11.0185
-        lobe_4_upper = 13.4314
-
-        lobe_5_lower = 24.4976
-        lobe_5_upper = 39.718
-
-        lobe_6_lower = 24.8949
-        lobe_6_upper = 33.57544
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper],[ lobe_4_lower, lobe_4_upper],[ lobe_5_lower, lobe_5_upper],[ lobe_6_lower, lobe_6_upper]])
-    
-
 #####4f orbital#####
 
     if Orb == '4f':
@@ -270,87 +346,408 @@ def r_domain(Orb):
         lobe_3_upper =  13.745982260283
 
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper]])
-    return lobe_domains
+
+
+    return lobe_domains, num_lobes
 
 ####################################################################################################
 ###################################### Orbital Mathematics #########################################
 ####################################################################################################
 
-def OrbCalc(Orb):
+def set_3d_colour(colour_name):
 
-    letter = Orb.strip('Orb')
-    n = float(letter.strip('p'))
+    if colour_name == 'go':
 
+        colours = [[0, 'rgb(48,148,33)'], [1, 'rgb(255,185,0)']]
+
+    elif colour_name == 'yp':
+
+        colours = [[0, 'rgb(109,0,157)'], [1, 'rgb(255,204,51)']]
+
+    elif colour_name == 'rb':
+
+        colours = [[0, 'rgb(12,116,235)'], [1, 'rgb(12,116,235)']]
+
+    return colours
+
+def get_orb_name(orb):
+
+    n = int(orb[0])
+    l = orb[1]
+
+    return n,l
+
+def OrbCalc(orbital_input, colour_name, fig, cutaway):
+
+    # Get colours of lobes
+    colours = set_3d_colour(colour_name)
+    
+    # Get orbital n value and name
+    n, l = get_orb_name(orbital_input)
+
+    print(cutaway, flush=True)
+
+    if l == 's':
+
+        data = plot_s_orb(n, orbital_input, colours, fig, cutaway)
+
+    elif l == 'p':
+
+        data = plot_p_orb(n, orbital_input, colours, fig, cutaway)
+
+    elif l == 'd':    
+
+        data = plot_dz_orb(n, orbital_input,colours, fig, cutaway)
+
+    elif l == 'f':
+
+        data = plot_f_orb(n, colour_1, colour_2)
+
+    return data
+
+def plot_s_orb(n, orbital_input,  colours, fig):
+
+    # Set contour level
     if n < 5:
         c = 0.003
     else:
         c = 0.0003
 
-    #Number of steps for angle and r
-    r_steps = 80
-    angle_steps = 50
+    # Set num steps for angle and r
+    r_mini_steps = 20
+    r_steps = 4*r_mini_steps
+    angle_steps = 80
 
-    #Arrays for x,y,z coordinates
-    # z has two separate arrays as it has two lobes separated by z axis
-    x = np.zeros([angle_steps, r_steps])
-    y = np.zeros([angle_steps, r_steps])
-    x_y_no_angle = np.zeros([r_steps])
-    zp = np.zeros([angle_steps, r_steps])
-    zm = np.zeros([angle_steps, r_steps])
+    #Array of angle values
+    ang = np.linspace(-np.pi/2, np.pi, num = angle_steps)
+
+    # Get bounds of r for each lobe of orbital
+    orb_r_bounds, num_lobes = r_domain(orbital_input)
 
     data = []
 
-    #Plot different radial portions of orbital
-
     flag = True
-
-    #Get bounds of r for each lobe of orbital
-    orb_r_bounds = r_domain(Orb)
 
     #Calculate coordinates of isosurface
     # loop over each lobe of the orbital
     
-    for lobe_it in np.arange(np.shape(orb_r_bounds)[0]):
+    num_shells = n
 
-        #Array of r values for each lobe
-        r = np.linspace(orb_r_bounds[lobe_it,0], orb_r_bounds[lobe_it,1], num = r_steps)
+    for shell in np.arange(num_shells):
+
+        low_bound = orb_r_bounds[shell,0]
+
+        gap = np.abs(orb_r_bounds[shell,0] - orb_r_bounds[shell,1])
+
+        x, y, z = calc_s_orb(n, c, orbital_input, gap, ang, orb_r_bounds, num_lobes, angle_steps, r_steps, r_mini_steps, low_bound)
+
+        fig.add_trace(go.Surface(x=x, y=y, z=z[0,:,:], colorscale= colours, showscale=False), 1, 1)
+        fig.add_trace(go.Surface(x=x, y=y, z=z[1,:,:], colorscale= colours, showscale=False), 1, 1)
 
 
-        #Calculate z(r)
-        z_of_r = PrincipleAxisFuncp(n,r,radial_p(Orb,r),c)
+    return fig
 
-        #Calculate angle independent term of x and y
-        x_y_no_angle = np.sqrt(r**2. - z_of_r**2.)
-        
-        #Array of angle values
-        ang = np.linspace(0., np.pi*2., num = angle_steps)
+def calc_s_orb(n, c, orbital_input, gap, ang, orb_r_bounds, num_lobes, angle_steps, r_steps, r_mini_steps, low_bound):
 
-        #Calculate x and y by multiplying by angular factor
-        #And set z coordinate for every angle and r value
-        for r_it in np.arange(r_steps):
-            for ang_it in np.arange(angle_steps):
-                x[ang_it,r_it]  = x_y_no_angle[r_it]*np.cos(ang[ang_it])
-                y[ang_it,r_it]  = x_y_no_angle[r_it]*np.sin(ang[ang_it])
-                zp[ang_it,r_it] = z_of_r[r_it]
+    #Arrays for x,y,z coordinates
+    # z has two separate arrays as a p orbital has two halves separated by a plane
+    x = np.zeros([angle_steps, r_steps])
+    y = np.zeros([angle_steps, r_steps])
+    x_y_no_angle = np.zeros([r_steps])
+    z = np.zeros([num_lobes, angle_steps, r_steps])
 
-        zm = -zp
+    #Array of r values for each lobe
+    # Sample more frequently closer to the pole of the lobe
+    r = np.linspace(low_bound, low_bound + gap*0.025, r_mini_steps)
+    r = np.append(r,np.linspace(low_bound+ gap*0.025, low_bound + gap*0.5, r_mini_steps))
+    r = np.append(r,np.linspace(low_bound+ gap*0.5, low_bound + gap*0.975, r_mini_steps))
+    r = np.append(r,np.linspace(low_bound+ gap*0.975, low_bound + gap, r_mini_steps))
 
-        #Switch lobe colours when plotting
-        flag = not flag
+    #Calculate z(r)
+    z_of_r = r
 
-        if flag == True:
-            data0 = go.Surface(x=x, y=y, z=zp, colorscale= [[0, 'rgb(109,0,157)'], [1,'rgb(109,0,157)']],showscale=False)
-            data1 = go.Surface(x=x, y=y, z=zm, colorscale= [[0, 'rgb(255,204,51)'], [1,'rgb(255,204,51)']],showscale=False)
+    #Calculate angle independent term of x and y
+    x_y_no_angle = np.sqrt(r**2. - z_of_r**2.)
 
-        elif flag == False:
-            data0 = go.Surface(x=x, y=y, z=zm, colorscale= [[0, 'rgb(109,0,157)'], [1,'rgb(109,0,157)']],showscale=False)
-            data1 = go.Surface(x=x, y=y, z=zp, colorscale= [[0, 'rgb(255,204,51)'], [1,'rgb(255,204,51)']],showscale=False)
-        
-        data.append(data0)
-        data.append(data1)     
+    #Calculate x and y by multiplying by angular factor
+    #And set z coordinate for every angle and r value
+    for r_it in np.arange(r_steps):
+        for ang_it in np.arange(angle_steps):
+            x[ang_it,r_it]   = z_of_r[r_it]*np.cos(ang[ang_it])
+            y[ang_it,r_it]   = z_of_r[r_it]*np.sin(ang[ang_it])
+            z[0,ang_it,r_it] = z_of_r[r_it]
+            z[1,ang_it,r_it] = -z_of_r[r_it]
+
+    return x, y, z
+
+
+def plot_p_orb(n, orbital_input,  colours, fig, cutaway):
+
+    # Set contour level
+    if n < 5:
+        c = 0.003
+    else:
+        c = 0.0003
+
+    # Set num steps for angle and r
+    r_mini_steps = 20
+    r_steps = 4*r_mini_steps
+    angle_steps = 50
+
+    #Array of angle values
+    ang = np.linspace(-np.pi * cutaway, np.pi, num = angle_steps)
+
+    # Get bounds of r for each lobe of orbital
+    orb_r_bounds, num_lobes = r_domain(orbital_input)
+
+    data = []
+
+    flag = True
+
+    #Calculate coordinates of isosurface
+    # loop over each lobe of the orbital
+
+    num_shells = n-1
+    sw = 0
+
+    for shell in np.arange(num_shells):
+
+        xt, yt, zt = calc_p_orb(n, c, orbital_input, orb_r_bounds[shell, :], ang, num_lobes, angle_steps, 
+                             r_steps, r_mini_steps)
+
+        if sw == 0 :
+            cot1 = np.zeros(np.shape(zt))
+            cot2 = np.ones(np.shape(zt))
+            sw = 1
+        else:
+            cot2 = np.zeros(np.shape(zt))
+            cot1 = np.ones(np.shape(zt))
+            sw = 0
+
+        if shell == 0:
+            x = np.copy(xt)
+            y = np.copy(yt)
+            z = np.copy(zt)
+            co = np.copy(cot1)
+        else:
+            x = np.append(x, xt, axis=0)
+            y = np.append(y, yt, axis=0)
+            z = np.append(z, zt, axis=0)
+            co = np.append(co, cot1, axis=0)
+
+        x = np.append(x, xt, axis=0)
+        y = np.append(y, yt, axis=0)
+        z = np.append(z, -zt, axis=0)
+        co = np.append(co, cot2, axis=0)
+
+    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
+
+    return fig
+
+def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, 
+               r_steps, r_mini_steps):
+
+    print(bounds, flush=True)
+
+    gap = np.abs(bounds[1] - bounds[0])
+
+    #Array of r values for each lobe
+    # Sample more frequently closer to the pole of the lobe
+    r = np.linspace(bounds[0], bounds[0] + gap*0.015, r_mini_steps)
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.015, bounds[0] + gap*0.5, r_mini_steps))
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.5, bounds[0] + gap*0.975, r_mini_steps))
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.975, bounds[0] + gap, r_mini_steps))
+
+    angm, rm = np.meshgrid(ang, r)
+
+    zor = p_z_ax(n,rm,radial_p(orbital_input,rm),c)
+
+    x = np.sqrt(rm**2. - zor**2.)*np.cos(angm)
+    y = np.sqrt(rm**2. - zor**2.)*np.sin(angm)
+    z = zor
+
+    return x, y, z
+
+def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
+
+    # Set contour level
+    if n < 5:
+        c = 0.003
+    else:
+        c = 0.0003
+
+    # Set num steps for angle and r
+    r_mini_steps = 20
+    r_steps = 4*r_mini_steps
+    angle_steps = 50
+
+    #Array of angle values
+    ang = np.linspace(-np.pi * cutaway, np.pi, num = angle_steps)
+
+    # Get bounds of r for each lobe of orbital
+    lobe_r_bounds, ring_r_bounds, num_lobes = dz_domain(orbital_input)
+
+    data = []
+
+    flag = True
+
+    #Calculate coordinates of isosurface
+    # loop over each lobe of the orbital
+    
+    num_shells = n-2
+    sw=0
+
+
+    for shell in np.arange(num_shells):
+
+        xt, yt, zt = calc_dz_orb(n, c, orbital_input, lobe_r_bounds[shell, :], ang, num_lobes, 
+                              angle_steps, r_steps, r_mini_steps, True)
+
+        if sw == 0 :
+            cot1 = np.zeros(np.shape(zt))
+            cot2 = np.zeros(np.shape(zt))
+            sw = 1
+        else:
+            cot2 = np.ones(np.shape(zt))
+            cot1 = np.ones(np.shape(zt))
+            sw = 0
+
+        if shell == 0:
+            x = np.copy(xt)
+            y = np.copy(yt)
+            z = np.copy(zt)
+            co = np.copy(cot1)
+        else:
+            x = np.append(x, xt, axis=0)
+            y = np.append(y, yt, axis=0)
+            z = np.append(z, zt, axis=0)
+            co = np.append(co, cot1, axis=0)
+
+        x = np.append(x, xt, axis=0)
+        y = np.append(y, yt, axis=0)
+        z = np.append(z, -zt, axis=0)
+        co = np.append(co, cot2, axis=0)
+
+    for shell in np.arange(num_shells):
+
+        xt, yt, zt = calc_dz_orb(n, c, orbital_input, ring_r_bounds[shell, :], ang, num_lobes, 
+                              angle_steps, r_steps, r_mini_steps, False)
+
+        if sw == 0 :
+            cot1 = np.zeros(np.shape(zt))
+            cot2 = np.zeros(np.shape(zt))
+            sw = 1
+        else:
+            cot2 = np.ones(np.shape(zt))
+            cot1 = np.ones(np.shape(zt))
+            sw = 0
+
+        x = np.append(x, xt, axis=0)
+        y = np.append(y, yt, axis=0)
+        z = np.append(z, zt, axis=0)
+        co = np.append(co, cot1, axis=0)
+
+        x = np.append(x, xt, axis=0)
+        y = np.append(y, yt, axis=0)
+        z = np.append(z, -zt, axis=0)
+        co = np.append(co, cot2, axis=0)
+
+    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
+
+    return fig
+
+def calc_dz_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps,
+                r_mini_steps, pos):
+
+    gap = np.abs(bounds[1] - bounds[0])
+
+    #Array of r values for each lobe
+    # Sample more frequently closer to the pole of the lobe
+    r =             np.linspace(bounds[0], bounds[0] + gap*0.025, r_mini_steps)
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.025, bounds[0] + gap*0.5, r_mini_steps))
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.5, bounds[0] + gap*0.975, r_mini_steps))
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.975, bounds[0] + gap, r_mini_steps))
+
+    angm, rm = np.meshgrid(ang, r)
+
+    #Calculate z(r)
+    if pos :
+        zor = d_z_ax_pos(n,rm,radial_d(orbital_input,rm),c)
+    else :
+        zor = d_z_ax_neg(n,rm,radial_d(orbital_input,rm),c)
+
+    x = np.sqrt(rm**2. - zor**2.)*np.cos(angm)
+    y = np.sqrt(rm**2. - zor**2.)*np.sin(angm)
+    z = zor
+
+    return x, y, z
+
+def plot_dxy_orb(n, orbital_input, colours, cutaway):
+
+    # Set contour level
+    if n < 5:
+        c = 0.003
+    else:
+        c = 0.0003
+
+    # Set num steps for angle and r
+    r_mini_steps = 5
+    r_steps = 4*r_mini_steps
+    angle_steps = 10
+
+    #Array of angle values
+    ang = np.linspace(-np.pi * cutaway, np.pi, num = angle_steps)
+
+    # Get bounds of r for each lobe of orbital
+    lobe_r_bounds, ring_r_bounds, num_lobes = dz_domain(orbital_input)
+
+    data = []
+
+    flag = True
+
+    #Calculate coordinates of isosurface
+    # loop over each lobe of the orbital
+    
+    num_shells = n-2
+
+    for shell in np.arange(num_shells):
+
+        low_bound = lobe_r_bounds[shell,0]
+
+        gap = np.abs(lobe_r_bounds[shell,0] - lobe_r_bounds[shell,1])
+
+        x, y, z = calc_dz_orb(n, c, orbital_input, gap, ang, lobe_r_bounds, num_lobes, 
+                              angle_steps, r_steps, r_mini_steps, low_bound, True)
+
+        data.append(go.Surface(x=x, y=y, z=z[0,:,:], colorscale= colour_1, showscale=False))
+        data.append(go.Surface(x=x, y=y, z=z[1,:,:], colorscale= colour_1, showscale=False))
+
+        colour_1, colour_2 = swap(colour_1, colour_2)
+
+    if num_shells%2 == 0:
+        colour_1, colour_2 = swap(colour_1, colour_2)
+
+    for shell in np.arange(num_shells):
+
+        low_bound = ring_r_bounds[shell,0]
+
+        gap = np.abs(ring_r_bounds[shell,0] - ring_r_bounds[shell,1])
+
+        x, y, z = calc_dz_orb(n, c, orbital_input, gap, ang, ring_r_bounds, num_lobes, 
+                              angle_steps, r_steps, r_mini_steps, low_bound, False)
+
+        data.append(go.Surface(x=x, y=y, z=z[0,:,:], colorscale= colour_1, showscale=False))
+        data.append(go.Surface(x=x, y=y, z=z[1,:,:], colorscale= colour_1, showscale=False))
+
+        colour_1, colour_2 = swap(colour_1, colour_2)
+
 
     return data
 
+
+def swap(colour_1, colour_2):
+
+    return colour_2, colour_1
 
 ###Functions for Radial Wave Functions
 
@@ -605,7 +1002,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                          {'label': '5f', 'value': '5f'},
                                                          {'label': '6f', 'value': '6f'},
                                                         ],
-                                                value=['2p'],
+                                                 value=['2p', '3p','4p', '5p','6p'],
                                                 labelStyle={
                                                             'maxwidth' : '20px',
                                                             'display': 'inline-block'
@@ -650,11 +1047,11 @@ orbital_plot_options = [html.Div(className = "container",
                                                            'value': 'RWF'
                                                           },
                                                           {
-                                                           'label': 'Orbital', 
+                                                           'label': '3D', 
                                                            'value': '3DWF'
                                                           }
                                                          ],
-                                                 value='RWF',
+                                                 value='RDF',
                                                  labelStyle={
                                                              'float':'left'
                                                              }
@@ -665,7 +1062,7 @@ orbital_plot_options = [html.Div(className = "container",
         )]
 
 
-WF_plot_options = [
+plot_options_2d = [
                 
             html.H2(style = {
                              'textAlign' : 'center', 
@@ -861,11 +1258,61 @@ WF_plot_options = [
                                     children=[
                                               dcc.Slider(
                                                   id = 'TextSizeSlider',
-                                                  min=5,
+                                                  min=15,
                                                   max=25,
                                                   step=0.5,
-                                                  value=20,
+                                                  value=19,
                                                         )
+                                             ]
+                                        ),
+                                html.Div(className = "item", 
+                                    style = {
+                                             'grid-column-start': '3',
+                                             'grid-column-end': '4',
+                                             'grid-row-start': '3',
+                                             'grid-row-end': '4'},
+                                    children=[
+                                              html.P(style = {
+                                                              'textAlign' : 'center', 
+                                                              'fontFamily' : 'sans-serif'
+                                                             },
+                                                     children = 'Plot Colours')
+                                             ]
+                                        ),
+                                html.Div(className = "item", 
+                                    style = {
+                                             'grid-column-start': '3',
+                                             'grid-column-end': '4',
+                                             'grid-row-start': '4',
+                                             'grid-row-end': '5',
+                                             'justify-self':'center',
+                                             'align-self':'center',
+                                             'padding-right' : '40%'
+                                             },
+                                    children=[
+                                              dcc.Dropdown(
+                                                             id = 'Colours_2d',
+                                                             options=[
+                                                                     { 
+                                                                      'label': 'normal', 
+                                                                      'value': 'normal'
+                                                                     },
+                                                                     {
+                                                                      'label': 'deuteranopia',
+                                                                      'value': 'deut'
+                                                                     },
+                                                                     {
+                                                                      'label': 'protanopia', 
+                                                                      'value': 'prot'
+                                                                     }
+                                                                     ],
+                                                             style = {
+                                                                      'width' : '150%'
+                                                                     }, 
+                                                             value='normal',
+                                                             searchable=False,
+                                                             clearable=False
+                                                            )
                                              ]
                                         )
 
@@ -873,13 +1320,136 @@ WF_plot_options = [
                               )]
 
 
+
+plot_options_3d = [
+                
+            html.H2(style = {
+                             'textAlign' : 'center', 
+                             'fontFamily' : 'sans-serif'
+                            },
+                    children = 'Plot Options'),
+
+            html.Div(className = "container", 
+                     style = {'display' : 'grid',
+                              'grid-template-columns': r'50% 50%',
+                              'grid-template-rows' : r'50% 50%',
+                              'justify-items' : 'center',
+                              'align-items' : 'center'
+                             },
+                     children=[
+                                html.Div(className = "item", 
+                                    style = {
+                                             'grid-column-start': '1',
+                                             'grid-column-end': '2',
+                                             'grid-row-start': '1',
+                                             'grid-row-end': '2'},
+                                    children=[
+                                              html.P(style = {
+                                                              'textAlign' : 'center', 
+                                                              'fontFamily' : 'sans-serif'
+                                                             },
+                                                     children = 'Lobe Colours')
+                                             ]
+                                        ),
+                                html.Div(className = "item", 
+                                    style = {
+                                             'grid-column-start': '2',
+                                             'grid-column-end': '3',
+                                             'grid-row-start': '1',
+                                             'grid-row-end': '2'},
+                                    children=[
+                                              html.P(style = {
+                                                              'textAlign' : 'center', 
+                                                              'fontFamily' : 'sans-serif'
+                                                             },
+                                                     children = 'Cutaway')
+                                             ]
+                                        ),
+                                html.Div(className = "item", 
+                                    style = {
+                                             'grid-column-start': '1',
+                                             'grid-column-end': '2',
+                                             'grid-row-start': '2',
+                                             'grid-row-end': '3',
+                                             'justify-self': 'stretch'
+                                             },
+                                    children=[
+                                              dcc.Dropdown(
+                                                             id = 'Colours_3d',
+                                                             options=[
+                                                                     { 
+                                                                      'label': 'yellow/purple', 
+                                                                      'value': 'yp'
+                                                                     },
+                                                                     {
+                                                                      'label': 'red/blue',
+                                                                      'value': 'rb'
+                                                                     },
+                                                                     {
+                                                                      'label': 'green/orange', 
+                                                                      'value': 'go'
+                                                                     }
+                                                                     ],
+                                                             style = {
+                                                                     }, 
+                                                             value='yp',
+                                                             searchable=False,
+                                                             clearable=False
+                                                            )
+                                             ]
+                                        ),
+                                html.Div(className = "item", 
+                                    style = {
+                                             'grid-column-start': '2',
+                                             'grid-column-end': '3',
+                                             'grid-row-start': '2',
+                                             'grid-row-end': '3'},
+                                    children=[
+                                              dcc.RadioItems(id = 'Cutaway', 
+                                                             style = {
+                                                                      'textAlign' : 'center',
+                                                                      'fontFamily' : 'sans-serif',
+                                                                      'display': 'block'
+                                                                     },
+                                                             options=[
+                                                                      {
+                                                                       'label': '0', 
+                                                                       'value': 1.0
+                                                                      },
+                                                                      {
+                                                                       'label': '1/4',
+                                                                       'value': 0.5
+                                                                      },
+                                                                      {
+                                                                       'label': '1/2',
+                                                                       'value': 0.
+                                                                      },
+                                                                     ],
+                                                             value=1.0,
+                                                             labelStyle={
+                                                                         'float':'left'
+                                                                         }
+                                                             )
+                                              ]
+                                        )
+
+                              ]
+                    )]
+
 plot_save_options = [
+
+            html.H2(style = {
+                             'textAlign' : 'center', 
+                             'fontFamily' : 'sans-serif'
+                            },
+                    children = 'Save Options'
+                    ),
                 
             html.Div(className = "container", 
                      style = {
                               'display' : 'grid',
-                              'grid-template-columns': r'50% 50%',
-                              'grid-template-rows' : r'33% 33% 33%',
+                              'grid-template-columns': r'33% 33% 33%',
+                              'grid-template-rows' : r'50% 50%',
                                'justify-items' : 'center',
                                'align-items' : 'center'
                               },
@@ -920,7 +1490,7 @@ plot_save_options = [
                                              'grid-column-end': '2',
                                              'grid-row-start': '2',
                                              'grid-row-end': '3',
-                                             'place-self': 'center',
+                                             'padding-left': '40%',
                                              },
                                     children=[
                                               dcc.Input(
@@ -929,7 +1499,7 @@ plot_save_options = [
                                                   type='number',
                                                   value=500,
                                                   style = {
-                                                           'width':'30%'
+                                                           'width':'35%'
                                                            }
                                                         )
                                              ]
@@ -940,7 +1510,7 @@ plot_save_options = [
                                              'grid-column-end': '3',
                                              'grid-row-start': '2',
                                              'grid-row-end': '3',
-                                             'place-self': 'center',
+                                             'padding-left': '40%',
                                              },
                                     children=[
                                               dcc.Input(
@@ -949,17 +1519,17 @@ plot_save_options = [
                                                   type='number',
                                                   value=700,
                                                   style = {
-                                                           'width':'30%'
+                                                           'width':'35%'
                                                            }
                                                         )
                                              ]
                                         ),
                                 html.Div(className = "item", 
                                     style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '3',
-                                             'grid-row-end': '4',
+                                             'grid-column-start': '3',
+                                             'grid-column-end': '4',
+                                             'grid-row-start': '2',
+                                             'grid-row-end': '3',
                                              'justify-self':'center'
                                              },
                                     children=[                                 
@@ -990,10 +1560,10 @@ plot_save_options = [
                                          ),
                                 html.Div(className = "item", 
                                     style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '3',
-                                             'grid-row-end': '4'
+                                             'grid-column-start': '3',
+                                             'grid-column-end': '4',
+                                             'grid-row-start': '1',
+                                             'grid-row-end': '2'
                                             },
                                     children=[                                 
                                               html.P(style = {
@@ -1045,8 +1615,9 @@ html.Div(className = "container",
                         children=[
                                   dcc.Graph(id='RDF_Graph', 
                                             style = {
-                                                     'autosize' : 'true',
-                                                     'height' : '600px',
+                                                     'responsive' : 'true',
+                                                     'height' : '580px',
+                                                     'automargin' : 'true'
                                                      }
                                             )
                                  ]
@@ -1059,33 +1630,77 @@ html.Div(className = "container",
                                  'grid-row-end': '2'
                                  },
                         children=[
-                                  html.Div(id = 'user_input',
+                                  html.Div(className = "container", 
+                                           style = { 'display' : 'grid',
+                                                     'grid-template-columns': r'100%',
+                                                     'margin': 'auto',
+                                                     'justify-content':'stretch',
+                                                     'align-self':'center'
+                                                    },
                                            children=[
-                                                     html.Div(id = 'orbitals box', 
-                                                              style = {}, 
-                                                              children = orbital_plot_options
-                                                              ),
-                                                     html.Div(id = 'plot_options_box', 
-                                                              style = {}, 
-                                                              children=WF_plot_options
-                                                              ),
-                                                     html.H2(style = {
-                                                                      'textAlign' : 'center', 
-                                                                      'fontFamily' : 'sans-serif'
-                                                                     }, 
-                                                             children = 'Save Options'
+                                                     html.Div(className = "item", 
+                                                         style = {
+                                                                  'grid-column-start': '1',
+                                                                  'grid-column-end': '2',
+                                                                  'grid-row-start': '1',
+                                                                  'grid-row-end': '2',
+                                                                  },
+                                                         children=[
+                                                                    html.Div(id        = 'orbitals box', 
+                                                                             style     = {}, 
+                                                                             children  = orbital_plot_options
+                                                                             ),
+                                                                  ]
                                                              ),
-                                                     html.Div(className = 'Save Options Box', 
-                                                              style = {}, 
-                                                              children = plot_save_options
-                                                             )
+                                                     html.Div(className = "item", 
+                                                         style = {
+                                                                  'grid-column-start': '1',
+                                                                  'grid-column-end': '2',
+                                                                  'grid-row-start': '2',
+                                                                  'grid-row-end': '3',
+                                                                  },
+                                                         children=[
+                                                                    html.Div(id        = 'plot_options_box_2d', 
+                                                                             style     = {}, 
+                                                                             children  = plot_options_2d
+                                                                             ),
+                                                                  ]
+                                                             ),
+                                                     html.Div(className = "item", 
+                                                         style = {
+                                                                  'grid-column-start': '1',
+                                                                  'grid-column-end': '2',
+                                                                  'grid-row-start': '2',
+                                                                  'grid-row-end': '3',
+                                                                  },
+                                                         children=[
+                                                                    html.Div(id        = 'plot_options_box_3d', 
+                                                                             style     = {}, 
+                                                                             children  = plot_options_3d
+                                                                             ),
+                                                                  ]
+                                                             ),
+                                                     html.Div(className = "item", 
+                                                         style = {
+                                                                  'grid-column-start': '1',
+                                                                  'grid-column-end': '2',
+                                                                  'grid-row-start': '3',
+                                                                  'grid-row-end': '4',
+                                                                  },
+                                                         children=[
+                                                                    html.Div(className = 'Save Options Box', 
+                                                                             style = {}, 
+                                                                             children  = plot_save_options
+                                                                            )
 
+                                                                  ]
+                                                             ),
                                                      ]
                                           )
 
                                  ]
                             )
-                     ]
+                 ]
         ),
 html.Footer(style = {
                      'textAlign'       : 'center', 
@@ -1124,6 +1739,41 @@ def toggle_pob(on_off) :
                 'borderWidth' : '0px',
                 'textAlign' : 'center'}
 
+def orb_checklist(dimension):
+    if dimension == '2d':
+        return[
+               {'label': '1s', 'value': '1s'},
+               {'label': '2s', 'value': '2s'},
+               {'label': '3s', 'value': '3s'},
+               {'label': '4s', 'value': '4s'},
+               {'label': '5s', 'value': '5s'},
+               {'label': '6s', 'value': '6s'},
+               {'label': '2p', 'value': '2p'},
+               {'label': '3p', 'value': '3p'},
+               {'label': '4p', 'value': '4p'},
+               {'label': '5p', 'value': '5p'},
+               {'label': '6p', 'value': '6p'},
+               {'label': '3d', 'value': '3d'},
+               {'label': '4d', 'value': '4d'},
+               {'label': '5d', 'value': '5d'},
+               {'label': '6d', 'value': '6d'},
+               {'label': '4f', 'value': '4f'},
+               {'label': '5f', 'value': '5f'},
+               {'label': '6f', 'value': '6f'},
+              ]
+
+    elif dimension == '3d':
+        return[
+               {'label': '2p', 'value': '2p'},
+               {'label': '3p', 'value': '3p'},
+               {'label': '4p', 'value': '4p'},
+               {'label': '5p', 'value': '5p'},
+               {'label': '6p', 'value': '6p'},
+               {'label': '3dz²', 'value': '3d_z2'},
+               {'label': '4dz²', 'value': '4d_z2'},
+               {'label': '5dz²', 'value': '5d_z2'},
+               {'label': '6dz²', 'value': '6d_z2'},
+              ]
 ##################################################################################################################################
 ########################################################### Callbacks ############################################################
 ##################################################################################################################################
@@ -1132,7 +1782,9 @@ def toggle_pob(on_off) :
 #Callback which defines what changes ('figure') and what causes the change (Checkbox being pressed)
 @app.callback([ddep.Output('RDF_Graph', 'figure'),
                ddep.Output('RDF_Graph', 'config'),
-               ddep.Output('plot_options_box', 'style')],
+               ddep.Output('plot_options_box_2d', 'style'),
+               ddep.Output('plot_options_box_3d', 'style'),
+               ddep.Output('OrbCheck', 'options')],
               [ddep.Input('OrbCheck', 'value'),
                ddep.Input('FuncType', 'value'), 
                ddep.Input('LineWidthSlider','value'), 
@@ -1143,12 +1795,15 @@ def toggle_pob(on_off) :
                ddep.Input('LowerxInput', 'value'),
                ddep.Input('PlotFormatDropdown', 'value'), 
                ddep.Input('PlotHeightInput', 'value'),
-               ddep.Input('PlotWidthInput', 'value')])
+               ddep.Input('PlotWidthInput', 'value'),
+               ddep.Input('Colours_2d','value'),
+               ddep.Input('Colours_3d','value'),
+               ddep.Input('Cutaway','value')])
 
 #Function which is called after the element is pressed
 def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
                ygridinput, upperxlim, lowerxlim,PlotFormat,
-               PlotHeight, PlotWidth):
+               PlotHeight, PlotWidth,colour_name_2d, colour_name_3d, cutaway):
 
     # If xlims nonetype then set to default
     if lowerxlim == None:
@@ -1160,61 +1815,65 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
     #Read type of wavefunction being requested and set axis names
     if FuncType == 'RDF':
         WFFlag = 1
-        WFName = r'$\text{Radial Distribution Function}  \ \ \ 4\pi r R(r)$'
+        WFName = r'$\text{Radial Distribution Function}  \ \ \ 4\pi r^2 R(r)^2$'
+        file_name = 'radial_distribution_functions'
     if FuncType == 'RWF':
         WFFlag = 2
         WFName = r'$\text{Radial Wavefunction}  \ \ \ R(r) $\n'
+        file_name = 'radial_wavefunctions'
     if FuncType == '3DWF':
         WFFlag = 3
         WFName = ''
-
-    # Set layout of plot box
-    # Basically turn all the stupid crap off
-    layout = common_ax_config()
 
     # Plot radial wavefunction or radial distribution function
     if WFFlag == 2 or WFFlag == 1:
         return {
                 'data': get_2d_plots(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness),
                 'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName)
-                }, modebar_config(PlotFormat, PlotHeight, PlotWidth), toggle_pob('on')
+                }, modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name), toggle_pob('on'), toggle_pob('off'), orb_checklist('2d')
 
     # Plot wavefunction isosurface
     # use first selection
     if WFFlag == 3 :
-        if len(Orbitals) > 0 and Orbitals[0].find('p') != -1:
-            return  {
-                     'data'  : OrbCalc(Orbitals[0]),
-                     'layout': layout
-                    }, modebar_config(PlotFormat, PlotHeight, PlotWidth), toggle_pob('off')
+        if len(Orbitals) > 0:
+
+            fig = make_subplots(rows=1, cols=1,
+                                specs=[[{'is_3d': True}]]
+                               )
+
+            fig.update_layout(ax_config_3d())
+
+            fig = OrbCalc(Orbitals[0], colour_name_3d, fig, np.float64(cutaway))
+
+            return  fig,modebar_config(PlotFormat, PlotHeight, PlotWidth, Orbitals[0]+' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
         else:
             return {
                     'data'   : None,
-                    'layout' : layout
-                    }, modebar_config(PlotFormat, PlotHeight, PlotWidth), toggle_pob('off')
+                    'layout' : ax_config_3d()
+                    }, modebar_config(PlotFormat, PlotHeight, PlotWidth, ' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
 
 
 def get_2d_plots(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
 
     # Calculate plot for each orbital and add to list
     traces = []
+    curr_ymax = 0.
     if len(Orbitals) > 0:
         for n in range(0,len(Orbitals)):
-            id = Orbitals[n]
             traces.append(go.Scatter(x = np.linspace(lowerxlim,upperxlim,1000), 
-                                     y = functiondict[id](np.linspace(lowerxlim,upperxlim,1000), WFFlag, 1.), 
+                                     y = functiondict[Orbitals[n]](np.linspace(lowerxlim,upperxlim,1000), WFFlag, 1.),
                                      line = dict(width = Thickness),
-                                     name = id, 
+                                     name = Orbitals[n], 
                                      hoverinfo = 'none')
                                     )
-
     return traces
 
 
-def common_ax_config():
+def ax_config_3d():
     return go.Layout(
                      hovermode=False,
                      dragmode="orbit",
+                     scene_aspectmode='cube',
                      scene=dict(
                                 xaxis=dict(
                                            gridcolor='rgb(255, 255, 255)',
@@ -1226,7 +1885,7 @@ def common_ax_config():
                                            showline=False,
                                            ticks='',
                                            showticklabels=False,
-                                           backgroundcolor='rgb(230, 230,230)'
+                                           backgroundcolor='rgb(255, 255,255)'
                                           ),
                                 yaxis=dict(
                                            gridcolor='rgb(255, 255, 255)',
@@ -1237,7 +1896,7 @@ def common_ax_config():
                                            showline=False,
                                            ticks='',
                                            showticklabels=False,
-                                           backgroundcolor='rgb(230, 230,230)'
+                                           backgroundcolor='rgb(255, 255,255)'
                                           ),
                                 zaxis=dict(
                                            gridcolor='rgb(255, 255, 255)',
@@ -1248,14 +1907,16 @@ def common_ax_config():
                                            showline=False,
                                            ticks='',
                                            showticklabels=False,
-                                           backgroundcolor='rgb(230, 230,230)'
+                                           backgroundcolor='rgb(255, 255,255)'
                                           ),
                                 aspectratio=dict(
                                                  x=1,
                                                  y=1,
                                                  z=1
-                                                )
-                                )
+                                                ),
+                                
+                                ),
+                     margin=dict(l=20, r=30, t=30, b=20),
                     )
 
 def ax_config_2d(xgridinput, ygridinput, TextSize, WFName):
@@ -1315,20 +1976,23 @@ def ax_config_2d(xgridinput, ygridinput, TextSize, WFName):
                               'showticklabels' :True
                              },
                      legend = {
+                               'x' : 0.8,
+                               'y' : 1,
                                'font' : 
                                        {
-                                        'size' : TextSize
+                                        'size' : TextSize - 3
                                        }
-                              }
+                              },
+                     margin=dict(l=90, r=30, t=30, b=60),
     )
 
-def modebar_config(PlotFormat, PlotHeight, PlotWidth):
+def modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name):
 
     return  {
             'toImageButtonOptions': 
               {
               'format': PlotFormat, 
-              'filename': 'Radial Distribution Functions',
+              'filename': file_name,
               'height': PlotHeight,
               'width': PlotWidth,
               }, 
@@ -1347,7 +2011,13 @@ def modebar_config(PlotFormat, PlotHeight, PlotWidth):
                 'zoomIn2d',
                 'zoomOut2d',
                 'hovermode',
-                'hoverCompareCartesian'
+                'resetCameraLastSave3d', 
+                'hoverClosest3d',
+                'hoverCompareCartesian',
+                'resetViewMapbox',
+                'orbitRotation', 
+                'tableRotation',
+                'resetCameraDefault3d'
                 ],
             'displaylogo': False,
             'displayModeBar' : True,
@@ -1356,4 +2026,5 @@ def modebar_config(PlotFormat, PlotHeight, PlotWidth):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8052)
+
+    app.run_server(debug=True, port=8053)

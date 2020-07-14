@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import optimize
 import matplotlib.pyplot as plt
+import subprocess
 
 
 def radial_p(Orb,r):
@@ -17,30 +18,35 @@ def radial_p(Orb,r):
 
 def radial_d(Orb,r): 
     # !!! Radial Wavefunctions of d orbitals
-    if Orb=='3d': out = 1./(9.*np.sqrt(30.))
+    if Orb == '3d_z2': 
+        return 1./(9.*np.sqrt(30.))
 
-    if Orb=='4d': out = (6.-r/2.)/(96.*np.sqrt(5.))
+    if Orb == '4d_z2':
+        return (6.-r/2.)/(96.*np.sqrt(5.))
 
-    if Orb=='5d': out = (42. - 28.*r/5. + (2.*r/5.)**2.)/(150.*np.sqrt(70.))
+    if Orb == '5d_z2':
+        return (42. - 28.*r/5. + (2.*r/5.)**2.)/(150.*np.sqrt(70.))
 
-    if Orb=='6d': out = (336. - 168.*(r/3.) + 24.*(r/3.)**2. - (r/3.)**3.)/(864.*np.sqrt(105.))
-    return out
+    if Orb == '6d_z2':
+        return (336. - 168.*(r/3.) + 24.*(r/3.)**2. - (r/3.)**3.)/(864.*np.sqrt(105.))
+
+def d_z_ax_pos(n,r,f,c):
+    return np.sqrt(r**2/3 + (n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1./(3.*abs(f))))
+
+def d_z_ax_neg(n,r,f,c):
+    return np.sqrt(r**2/3 - (n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1./(3.*abs(f))))
 
 def p_z(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
 
-def dz2_z(n,r,f,c):
-    return np.sqrt(r**2./3. + n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1/(3*abs(f)))
+def s_func(n,r,f,c)
+    return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
 
+def bound_fun_s(r, Orb, c):
 
-def bound_fun_dz2_extra(r):
-
-    Orb = '4d'
-    c = 0.003
     n = float(Orb[0])
-    f = radial_d(Orb,r)
 
-    return r**2./3. - n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1/(3*abs(f))
+    return r**2 - s_func(n,r,radial_s(Orb,r),c)**2
 
 def bound_fun_p(r):
 
@@ -50,45 +56,51 @@ def bound_fun_p(r):
     
     return r**2 - p_z(n,r,radial_p(Orb,r),c)**2
 
-def bound_fun_dz2(r):
+def bound_fun_dz2_pos(r, Orb, c):
 
-    Orb = '4d'
-    c = 0.003
     n = float(Orb[0])
 
-    return r**2 - dz2_z(n,r,radial_d(Orb,r),c)**2 
+    return r**2 - d_z_ax_pos(n,r,radial_d(Orb,r),c)**2
+
+def bound_fun_dz2_neg(r, Orb, c):
+
+    n = float(Orb[0])
+
+    return np.nan_to_num(r**2 - d_z_ax_neg(n,r,radial_d(Orb,r),c)**2, 200000000000.)
 
 
-#p orbital r domains
+fig, (ax) = plt.subplots( 1, 1)
 
-#val = 25.8375464341635
-#
-#sol = optimize.fsolve(bound_fun_p,val,xtol = 0.00000000001)
-#
-#print('%15.13f '% (sol))
-#print(bound_fun_p(25.8546178917617))
+# dz2 orbital r domains
 
+c = 0.0003
+orb = '1s'
+n = float(Orb[0])
+tolerance = 0.000000000000001
 
-# d orbital r domains excluding dz2
+val_1 = 0.5
+sol_1 = optimize.root_scalar(bound_fun_s, x0 = val_1, x1 = val_1+0.01, args = (orb, c), xtol = tolerance)
 
-val = 10
-sol = optimize.fsolve(bound_fun_dz2_extra,val,xtol = 0.000000001)
+# print(sol_1, '\n')
+# print(sol_2)
+r = np.arange(58.47034306, 58.47034307, 0.000000000001)
+ 
+cv = 58.470343060020994
+print(cv)
+print(d_z_ax_neg(n,cv,radial_d(orb,cv),c))
+#Calculate z(r)
+z_of_r_neg = d_z_ax_neg(n,r,radial_d(orb,r),c)
 
-print('%15.13f '% (sol))
-print(bound_fun_dz2_extra(sol))
-print(bound_fun_dz2_extra(10.0090911475380))
+subprocess.run(["rm", "outfile"])
 
+np.savetxt('outfile', np.transpose(np.vstack((r,z_of_r_neg))))
 
-fig, (ax) = plt.subplots( 1, 1, sharex=False, sharey='all', figsize=(8,6))
+exit()
 
-r = np.linspace(0,20, 1000)
+output = np.nan_to_num(r**2 - d_z_ax_neg(n,r,radial_d(orb,r),c)**2, 20000.)
 
-ax.plot(r,r**2 - dz2_z(3,r,radial_d('3d',r),0.003)**2 )
-ax.plot(r,np.zeros(1000))
+ax.plot(r, np.zeros(np.size(r)))
+ax.plot(r, output)
+plt.show()
 
-#plt.show()
-
-# dx2 orbital r domains
-
-
-
+print(output.min())
