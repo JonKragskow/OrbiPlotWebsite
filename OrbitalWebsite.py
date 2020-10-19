@@ -1,5 +1,6 @@
 import numpy as np
 import dash
+import math
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_flexbox_grid as dfx
@@ -50,16 +51,16 @@ def radial_p(Orb,r):
 
 def radial_d(Orb,r): 
     # !!! Radial Wavefunctions of d orbitals
-    if Orb.find('3d_z2') == 0: 
+    if Orb.find('3d') == 0: 
         return 1./(9.*np.sqrt(30.))
 
-    if Orb.find('4d_z2') == 0: 
+    if Orb.find('4d') == 0: 
         return (6.-r/2.)/(96.*np.sqrt(5.))
 
-    if Orb.find('5d_z2') == 0: 
+    if Orb.find('5d') == 0: 
         return (42. - 28.*r/5. + (2.*r/5.)**2.)/(150.*np.sqrt(70.))
 
-    if Orb.find('6d_z2') == 0: 
+    if Orb.find('6d') == 0: 
         return (336. - 168.*(r/3.) + 24.*(r/3.)**2. - (r/3.)**3.)/(864.*np.sqrt(105.))
 
 ############################f Orbital Wavefunction functions#########################
@@ -84,7 +85,7 @@ def dz_domain(Orb):
     # !!! Returns an array containing the bounds
     # of r for each lobe of the requested dz2 orbital
 
-    if Orb.find('3d_z2') == 0:
+    if Orb.find('3d') == 0:
 
         num_lobes = 2
 
@@ -97,7 +98,7 @@ def dz_domain(Orb):
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
         ring_domains = np.array([[ring_1_lower, ring_1_upper]])
 
-    if Orb.find('4d_z2') == 0:
+    if Orb.find('4d') == 0:
 
         num_lobes = 4
 
@@ -116,7 +117,7 @@ def dz_domain(Orb):
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[lobe_2_lower, lobe_2_upper]])
         ring_domains = np.array([[ring_1_lower, ring_1_upper],[ring_2_lower, ring_2_upper]])
 
-    if Orb.find('5d_z2') == 0:
+    if Orb.find('5d') == 0:
 
         num_lobes = 6
 
@@ -145,7 +146,7 @@ def dz_domain(Orb):
                                  [ring_2_lower, ring_2_upper],
                                  [ring_3_lower, ring_3_upper]])
 
-    if Orb.find('6d_z2') == 0:
+    if Orb.find('6d') == 0:
 
         num_lobes = 8
 
@@ -182,10 +183,21 @@ def dz_domain(Orb):
                                  [ring_3_lower, ring_3_upper],
                                  [ring_4_lower, ring_4_upper]])
 
-
-
-
     return lobe_domains, ring_domains, num_lobes
+
+def dxy_domain(Orb):
+
+    if Orb.find('3dxy') == 0:
+
+        num_lobes = 2
+
+        lobe_1_lower = 0.25762972206931206
+        lobe_1_upper = 30.2964334304816 
+
+        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
+
+    return lobe_domains, num_lobes
+
 
 def r_domain(Orb):
     # !!! Returns an array containing the bounds of r for each lobe of the requested orbital
@@ -395,9 +407,17 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
         data = plot_p_orb(n, orbital_input, colours, fig, cutaway)
 
-    elif l == 'd':    
+    elif l == 'd':  
 
-        data = plot_dz_orb(n, orbital_input,colours, fig, cutaway)
+        print(orbital_input, orbital_input.find('xy'), flush=True)
+
+        if orbital_input.find('xy') != -1:
+
+            data = plot_dxy_orb(n, orbital_input,colours, fig, cutaway)
+
+        else:
+
+            data = plot_dz_orb(n, orbital_input,colours, fig, cutaway)
 
     elif l == 'f':
 
@@ -603,6 +623,9 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
         xt, yt, zt = calc_dz_orb(n, c, orbital_input, lobe_r_bounds[shell, :], ang, num_lobes, 
                               angle_steps, r_steps, r_mini_steps, True)
 
+        a = np.zeros(np.shape(xt))
+        a[:] = math.nan
+
         if sw == 0 :
             cot1 = np.zeros(np.shape(zt))
             cot2 = np.zeros(np.shape(zt))
@@ -618,15 +641,25 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
             z = np.copy(zt)
             co = np.copy(cot1)
         else:
-            x = np.append(x, xt, axis=0)
-            y = np.append(y, yt, axis=0)
-            z = np.append(z, zt, axis=0)
-            co = np.append(co, cot1, axis=0)
+            x = np.append(x, xt, axis=1)
+            y = np.append(y, yt, axis=1)
+            z = np.append(z, zt, axis=1)
+            co = np.append(co, cot1, axis=1)
 
-        x = np.append(x, xt, axis=0)
-        y = np.append(y, yt, axis=0)
-        z = np.append(z, -zt, axis=0)
-        co = np.append(co, cot2, axis=0)
+        x = np.append(x, a, axis=1)
+        y = np.append(y, a, axis=1)
+        z = np.append(z, a, axis=1)
+        co = np.append(co, a, axis=1)
+
+        x = np.append(x, xt, axis=1)
+        y = np.append(y, yt, axis=1)
+        z = np.append(z, -zt, axis=1)
+        co = np.append(co, cot2, axis=1)
+
+        x = np.append(x, a, axis=1)
+        y = np.append(y, a, axis=1)
+        z = np.append(z, a, axis=1)
+        co = np.append(co, a, axis=1)
 
     for shell in np.arange(num_shells):
 
@@ -642,17 +675,123 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
             cot1 = np.ones(np.shape(zt))
             sw = 0
 
-        x = np.append(x, xt, axis=0)
-        y = np.append(y, yt, axis=0)
-        z = np.append(z, zt, axis=0)
-        co = np.append(co, cot1, axis=0)
+        x = np.append(x, xt, axis=1)
+        y = np.append(y, yt, axis=1)
+        z = np.append(z, zt, axis=1)
+        co = np.append(co, cot1, axis=1)
 
-        x = np.append(x, xt, axis=0)
-        y = np.append(y, yt, axis=0)
-        z = np.append(z, -zt, axis=0)
-        co = np.append(co, cot2, axis=0)
+        x = np.append(x, a, axis=1)
+        y = np.append(y, a, axis=1)
+        z = np.append(z, a, axis=1)
+        co = np.append(co, a, axis=1)
 
-    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
+        x = np.append(x, xt, axis=1)
+        y = np.append(y, yt, axis=1)
+        z = np.append(z, -zt, axis=1)
+        co = np.append(co, cot2, axis=1)
+
+        x = np.append(x, a, axis=1)
+        y = np.append(y, a, axis=1)
+        z = np.append(z, a, axis=1)
+        co = np.append(co, a, axis=1)
+
+
+    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False, connectgaps = False), 1, 1)
+
+    return fig
+
+def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
+
+
+    # Set contour level
+    if n < 5:
+        c = 0.003
+    else:
+        c = 0.0003
+
+    # Set num steps for angle and r
+    r_mini_steps = 20
+    r_steps = 4*r_mini_steps
+    angle_steps = 90
+
+    #Array of angle values
+    ang = np.linspace(0, 2*np.pi, num = angle_steps)
+
+    # Get bounds of r for each lobe of orbital
+    lobe_r_bounds, num_lobes = dxy_domain(orbital_input)
+
+    data = []
+
+    flag = True
+
+    #Calculate coordinates of isosurface
+    # loop over each lobe of the orbital
+    
+    num_shells = n-2
+    sw=0
+
+    for shell in np.arange(num_shells):
+
+        xt, yt, zt = calc_dxy_orb(n, c, orbital_input, lobe_r_bounds[shell, :], ang, num_lobes, 
+                              angle_steps, r_steps, r_mini_steps, True)
+
+        a = np.zeros(np.shape(xt))
+        a[:] = math.nan
+
+        if sw == 0 :
+            cot1 = np.zeros(np.shape(zt))
+            cot2 = np.ones(np.shape(zt))
+            sw = 1
+        else:
+            cot2 = np.zeros(np.shape(zt))
+            cot1 = np.ones(np.shape(zt))
+            sw = 0
+
+        if shell == 0:
+            x = np.copy(xt)
+            y = np.copy(yt)
+            z = np.copy(zt)
+            co = np.copy(cot1)
+        else:
+            x = np.vstack([x, xt])
+            y = np.vstack([y, yt])
+            z = np.vstack([z, zt])
+            co = np.vstack([co, cot1])
+
+        x = np.vstack([x, a])
+        y = np.vstack([y, a])
+        z = np.vstack([z, a])
+        co = np.vstack([co, a])
+
+        x = np.vstack([x, xt])
+        y = np.vstack([y, -yt])
+        z = np.vstack([z, zt])
+        co = np.vstack([co, cot1])
+
+        x = np.vstack([x, a])
+        y = np.vstack([y, a])
+        z = np.vstack([z, a])
+        co = np.vstack([co, a])
+
+        x = np.vstack([x, yt])
+        y = np.vstack([y, xt])
+        z = np.vstack([z, zt])
+        co = np.vstack([co, cot2])
+
+        x = np.vstack([x, a])
+        y = np.vstack([y, a])
+        z = np.vstack([z, a])
+        co = np.vstack([co, a])
+
+        x = np.vstack([x, -yt])
+        y = np.vstack([y, xt])
+        z = np.vstack([z, zt])
+        co = np.vstack([co, cot2])
+
+
+    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False, connectgaps = False), 1, 1)
+
+    print(colours, flush=True)
 
     return fig
 
@@ -682,67 +821,28 @@ def calc_dz_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_step
 
     return x, y, z
 
-def plot_dxy_orb(n, orbital_input, colours, cutaway):
+def calc_dxy_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps,
+                r_mini_steps, pos):
 
-    # Set contour level
-    if n < 5:
-        c = 0.003
-    else:
-        c = 0.0003
+    gap = np.abs(bounds[1] - bounds[0])
 
-    # Set num steps for angle and r
-    r_mini_steps = 5
-    r_steps = 4*r_mini_steps
-    angle_steps = 10
+    #Array of r values for each lobe
+    # Sample more frequently closer to the pole of the lobe
+    r =             np.linspace(bounds[0], bounds[0] + gap*0.025, r_mini_steps)
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.025, bounds[0] + gap*0.5, r_mini_steps))
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.5, bounds[0] + gap*0.975, r_mini_steps))
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.975, bounds[0] + gap, r_mini_steps))
 
-    #Array of angle values
-    ang = np.linspace(-np.pi * cutaway, np.pi, num = angle_steps)
+    angm, rm = np.meshgrid(ang, r)
 
-    # Get bounds of r for each lobe of orbital
-    lobe_r_bounds, ring_r_bounds, num_lobes = dz_domain(orbital_input)
+    #Calculate g(r)
+    g_r = rm**2. - c * float(n)**2. * np.exp(rm/float(n)) * np.sqrt(np.pi/15.) / np.abs(radial_d(orbital_input,rm))
 
-    data = []
-
-    flag = True
-
-    #Calculate coordinates of isosurface
-    # loop over each lobe of the orbital
+    x = np.sqrt(g_r/2.)*np.cos(angm)
+    z = np.sqrt(g_r)*np.sin(angm)
+    y = np.sqrt(rm**2. -x**2. -z**2.)
     
-    num_shells = n-2
-
-    for shell in np.arange(num_shells):
-
-        low_bound = lobe_r_bounds[shell,0]
-
-        gap = np.abs(lobe_r_bounds[shell,0] - lobe_r_bounds[shell,1])
-
-        x, y, z = calc_dz_orb(n, c, orbital_input, gap, ang, lobe_r_bounds, num_lobes, 
-                              angle_steps, r_steps, r_mini_steps, low_bound, True)
-
-        data.append(go.Surface(x=x, y=y, z=z[0,:,:], colorscale= colour_1, showscale=False))
-        data.append(go.Surface(x=x, y=y, z=z[1,:,:], colorscale= colour_1, showscale=False))
-
-        colour_1, colour_2 = swap(colour_1, colour_2)
-
-    if num_shells%2 == 0:
-        colour_1, colour_2 = swap(colour_1, colour_2)
-
-    for shell in np.arange(num_shells):
-
-        low_bound = ring_r_bounds[shell,0]
-
-        gap = np.abs(ring_r_bounds[shell,0] - ring_r_bounds[shell,1])
-
-        x, y, z = calc_dz_orb(n, c, orbital_input, gap, ang, ring_r_bounds, num_lobes, 
-                              angle_steps, r_steps, r_mini_steps, low_bound, False)
-
-        data.append(go.Surface(x=x, y=y, z=z[0,:,:], colorscale= colour_1, showscale=False))
-        data.append(go.Surface(x=x, y=y, z=z[1,:,:], colorscale= colour_1, showscale=False))
-
-        colour_1, colour_2 = swap(colour_1, colour_2)
-
-
-    return data
+    return x, y, z
 
 
 def swap(colour_1, colour_2):
@@ -1002,7 +1102,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                          {'label': '5f', 'value': '5f'},
                                                          {'label': '6f', 'value': '6f'},
                                                         ],
-                                                 value=['2p', '3p','4p', '5p','6p'],
+                                                 value=['2p'],
                                                 labelStyle={
                                                             'maxwidth' : '20px',
                                                             'display': 'inline-block'
@@ -1773,6 +1873,10 @@ def orb_checklist(dimension):
                {'label': '4dz²', 'value': '4d_z2'},
                {'label': '5dz²', 'value': '5d_z2'},
                {'label': '6dz²', 'value': '6d_z2'},
+               {'label': '3dxy', 'value': '3dxy'},
+               {'label': '4dxy', 'value': '4dxy'},
+               {'label': '5dxy', 'value': '5dxy'},
+               {'label': '6dxy', 'value': '6dxy'},
               ]
 ##################################################################################################################################
 ########################################################### Callbacks ############################################################
