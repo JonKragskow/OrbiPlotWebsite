@@ -1963,7 +1963,7 @@ def ax_config_2d(xgridinput, ygridinput, TextSize, WFName, xlow, xup):
                               'showline'  : True,
                               'range'     : [xlow, xup],
                               'title' : {
-                                         'text' : "$(Distance a_0)$",
+                                         'text' : r"$\mathrm{Distance} \ (a_0)$",
                                          'font' :
                                                  {
                                                   'size' : TextSize
