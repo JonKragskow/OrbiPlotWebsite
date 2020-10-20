@@ -3,14 +3,16 @@ import dash
 import math
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_flexbox_grid as dfx
 import plotly.graph_objs as go
-import plotly.io as pio
 import dash.dependencies as ddep
 from subprocess import call
 import json
 from plotly.subplots import make_subplots
-
+import dash_defer_js_import as dji
+from scipy.special import sph_harm
+from plotly.subplots import make_subplots
+from sympy.physics.wigner import wigner_3j, wigner_6j
+from sympy import S
 
 ####################################################################################################
 ####################################### Radial Functions ###########################################
@@ -26,7 +28,7 @@ def d_z_ax_neg(n,r,f,c):
     return np.sqrt(r**2 * 1./3. - n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1./(3.*np.abs(f)))
 
 def radial_s(Orb,r):
-    # !!! Radial Wavefunctions of p orbitals
+    # !!! Radial Wavefunction of s orbitals
     if Orb=='1s': 
         return 2.*np.exp(-r)
  
@@ -378,7 +380,7 @@ def set_3d_colour(colour_name):
 
     elif colour_name == 'rb':
 
-        colours = [[0, 'rgb(12,116,235)'], [1, 'rgb(12,116,235)']]
+        colours = [[0, 'rgb(12,116,235)'], [1, 'rgb(255,0,0)']]
 
     return colours
 
@@ -590,210 +592,114 @@ def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps,
 
 def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
 
-    # Set contour level
-    if n < 5:
-        c = 0.003
-    else:
-        c = 0.0003
 
-    # Set num steps for angle and r
-    r_mini_steps = 20
-    r_steps = 4*r_mini_steps
-    angle_steps = 50
+    if n == 3:
+        x,y,z = np.mgrid[-30:30:60j, -30:30*cutaway:60j, -30:30:60j]
+    elif n == 4:
+        x,y,z = np.mgrid[-42:42:60j, -42:42*cutaway:60j, -42:42:60j]
+    elif n == 5:
+        x,y,z = np.mgrid[-65:65:60j, -65:65*cutaway:60j, -65:65:60j]
+    elif n == 6:
+        x,y,z = np.mgrid[-90:90:110j, -90:90*cutaway:110j, -90:90:110j]
 
-    #Array of angle values
-    ang = np.linspace(-np.pi * cutaway, np.pi, num = angle_steps)
+    r = np.sqrt(x**2 + y**2 + z**2)
 
-    # Get bounds of r for each lobe of orbital
-    lobe_r_bounds, ring_r_bounds, num_lobes = dz_domain(orbital_input)
+    rho = 2*r/n
 
-    data = []
+    if n == 3:
+        Rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
+    elif n == 4:
+        Rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
+    elif n == 5:
+        Rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
+    elif n == 6:
+        Rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
 
-    flag = True
+    Ang = 2*z**2-x**2-y**2
 
-    #Calculate coordinates of isosurface
-    # loop over each lobe of the orbital
-    
-    num_shells = n-2
-    sw=0
+    wav = Rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*Ang
 
+    print(np.shape(x), flush=True)
 
-    for shell in np.arange(num_shells):
+    if n == 3:
+        ival=0.04
+    elif n == 4:
+        ival = 0.04
+    elif n == 5:
+        ival = 0.04
+    elif n == 6:
+        ival = 0.04
 
-        xt, yt, zt = calc_dz_orb(n, c, orbital_input, lobe_r_bounds[shell, :], ang, num_lobes, 
-                              angle_steps, r_steps, r_mini_steps, True)
-
-        a = np.zeros(np.shape(xt))
-        a[:] = math.nan
-
-        if sw == 0 :
-            cot1 = np.zeros(np.shape(zt))
-            cot2 = np.zeros(np.shape(zt))
-            sw = 1
-        else:
-            cot2 = np.ones(np.shape(zt))
-            cot1 = np.ones(np.shape(zt))
-            sw = 0
-
-        if shell == 0:
-            x = np.copy(xt)
-            y = np.copy(yt)
-            z = np.copy(zt)
-            co = np.copy(cot1)
-        else:
-            x = np.append(x, xt, axis=1)
-            y = np.append(y, yt, axis=1)
-            z = np.append(z, zt, axis=1)
-            co = np.append(co, cot1, axis=1)
-
-        x = np.append(x, a, axis=1)
-        y = np.append(y, a, axis=1)
-        z = np.append(z, a, axis=1)
-        co = np.append(co, a, axis=1)
-
-        x = np.append(x, xt, axis=1)
-        y = np.append(y, yt, axis=1)
-        z = np.append(z, -zt, axis=1)
-        co = np.append(co, cot2, axis=1)
-
-        x = np.append(x, a, axis=1)
-        y = np.append(y, a, axis=1)
-        z = np.append(z, a, axis=1)
-        co = np.append(co, a, axis=1)
-
-    for shell in np.arange(num_shells):
-
-        xt, yt, zt = calc_dz_orb(n, c, orbital_input, ring_r_bounds[shell, :], ang, num_lobes, 
-                              angle_steps, r_steps, r_mini_steps, False)
-
-        if sw == 0 :
-            cot1 = np.zeros(np.shape(zt))
-            cot2 = np.zeros(np.shape(zt))
-            sw = 1
-        else:
-            cot2 = np.ones(np.shape(zt))
-            cot1 = np.ones(np.shape(zt))
-            sw = 0
-
-        x = np.append(x, xt, axis=1)
-        y = np.append(y, yt, axis=1)
-        z = np.append(z, zt, axis=1)
-        co = np.append(co, cot1, axis=1)
-
-        x = np.append(x, a, axis=1)
-        y = np.append(y, a, axis=1)
-        z = np.append(z, a, axis=1)
-        co = np.append(co, a, axis=1)
-
-        x = np.append(x, xt, axis=1)
-        y = np.append(y, yt, axis=1)
-        z = np.append(z, -zt, axis=1)
-        co = np.append(co, cot2, axis=1)
-
-        x = np.append(x, a, axis=1)
-        y = np.append(y, a, axis=1)
-        z = np.append(z, a, axis=1)
-        co = np.append(co, a, axis=1)
+    print(ival, flush=True)
 
 
-    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False, connectgaps = False), 1, 1)
-
+    fig.add_trace(go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=wav.flatten(),
+        isomin=-ival,
+        isomax=ival,
+        caps=dict(x_show=False, y_show=False, z_show=False),
+        showscale=False,
+        colorscale=colours
+        ))
     return fig
+
 
 def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
 
 
-    # Set contour level
-    if n < 5:
-        c = 0.003
-    else:
-        c = 0.0003
+    if n == 3:
+        x,y,z = np.mgrid[-25:25:45j, -25:25:45j, -25:25*cutaway:45j]
+    elif n == 4:
+        x,y,z = np.mgrid[-42:42:50j, -42:42:50j, -42:42*cutaway:50j]
+    elif n == 5:
+        x,y,z = np.mgrid[-60:60:50j, -60:60:50j, -60:60*cutaway:50j]
+    elif n == 6:
+        x,y,z = np.mgrid[-77:77:60j, -77:77:60j, -77:77*cutaway:60j]
 
-    # Set num steps for angle and r
-    r_mini_steps = 20
-    r_steps = 4*r_mini_steps
-    angle_steps = 90
+    r = np.sqrt(x**2 + y**2 + z**2)
 
-    #Array of angle values
-    ang = np.linspace(0, 2*np.pi, num = angle_steps)
+    rho = 2*r/n
 
-    # Get bounds of r for each lobe of orbital
-    lobe_r_bounds, num_lobes = dxy_domain(orbital_input)
+    if n == 3:
+        Rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
+    elif n == 4:
+        Rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
+    elif n == 5:
+        Rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
+    elif n == 6:
+        Rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
 
-    data = []
+    Ang = x*y
 
-    flag = True
+    wav = Rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*Ang
 
-    #Calculate coordinates of isosurface
-    # loop over each lobe of the orbital
-    
-    num_shells = n-2
-    sw=0
+    print(x)
 
-    for shell in np.arange(num_shells):
-
-        xt, yt, zt = calc_dxy_orb(n, c, orbital_input, lobe_r_bounds[shell, :], ang, num_lobes, 
-                              angle_steps, r_steps, r_mini_steps, True)
-
-        a = np.zeros(np.shape(xt))
-        a[:] = math.nan
-
-        if sw == 0 :
-            cot1 = np.zeros(np.shape(zt))
-            cot2 = np.ones(np.shape(zt))
-            sw = 1
-        else:
-            cot2 = np.zeros(np.shape(zt))
-            cot1 = np.ones(np.shape(zt))
-            sw = 0
-
-        if shell == 0:
-            x = np.copy(xt)
-            y = np.copy(yt)
-            z = np.copy(zt)
-            co = np.copy(cot1)
-        else:
-            x = np.vstack([x, xt])
-            y = np.vstack([y, yt])
-            z = np.vstack([z, zt])
-            co = np.vstack([co, cot1])
-
-        x = np.vstack([x, a])
-        y = np.vstack([y, a])
-        z = np.vstack([z, a])
-        co = np.vstack([co, a])
-
-        x = np.vstack([x, xt])
-        y = np.vstack([y, -yt])
-        z = np.vstack([z, zt])
-        co = np.vstack([co, cot1])
-
-        x = np.vstack([x, a])
-        y = np.vstack([y, a])
-        z = np.vstack([z, a])
-        co = np.vstack([co, a])
-
-        x = np.vstack([x, yt])
-        y = np.vstack([y, xt])
-        z = np.vstack([z, zt])
-        co = np.vstack([co, cot2])
-
-        x = np.vstack([x, a])
-        y = np.vstack([y, a])
-        z = np.vstack([z, a])
-        co = np.vstack([co, a])
-
-        x = np.vstack([x, -yt])
-        y = np.vstack([y, xt])
-        z = np.vstack([z, zt])
-        co = np.vstack([co, cot2])
-
-
-    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False, connectgaps = False), 1, 1)
-
-    print(colours, flush=True)
-
+    if n == 3:
+        ival=0.005
+    elif n == 4:
+        ival = 0.01
+    elif n == 5:
+        ival = 0.01
+    elif n == 6:
+        ival = 0.01
+        
+    fig.add_trace(go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=wav.flatten(),
+        isomin=-ival,
+        isomax=ival,
+        caps=dict(x_show=False, y_show=False, z_show=False),
+        showscale=False,
+        colorscale=colours
+        ))
     return fig
+
 
 def calc_dz_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps,
                 r_mini_steps, pos):
@@ -822,7 +728,7 @@ def calc_dz_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_step
     return x, y, z
 
 def calc_dxy_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps,
-                r_mini_steps, pos):
+                r_mini_steps):
 
     gap = np.abs(bounds[1] - bounds[0])
 
@@ -831,7 +737,7 @@ def calc_dxy_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_ste
     r =             np.linspace(bounds[0], bounds[0] + gap*0.025, r_mini_steps)
     r = np.append(r,np.linspace(bounds[0]+ gap*0.025, bounds[0] + gap*0.5, r_mini_steps))
     r = np.append(r,np.linspace(bounds[0]+ gap*0.5, bounds[0] + gap*0.975, r_mini_steps))
-    r = np.append(r,np.linspace(bounds[0]+ gap*0.975, bounds[0] + gap, r_mini_steps))
+    r = np.append(r,np.linspace(bounds[0]+ gap*0.975, bounds[1], r_mini_steps))
 
     angm, rm = np.meshgrid(ang, r)
 
@@ -849,7 +755,7 @@ def swap(colour_1, colour_2):
 
     return colour_2, colour_1
 
-###Functions for Radial Wave Functions
+###Functions for Radial Wave Functions and probability density functions
 
 def s_1(r,mode, zeff):
     rho = np.copy(2.*r/1.  * zeff)
@@ -1021,9 +927,12 @@ functiondict = {'1s': s_1,
 ##################################################################################################################################
 
 #Build the webpage layout
-app = dash.Dash(__name__,external_scripts=[
-  'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML',
-])
+
+mathjax_script = dji.Import(src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_SVG")
+refresh_plots =  dji.Import(src="https://codepen.io/chrisvoncsefalvay/pen/ExPJjWP.js")
+
+app = dash.Dash(__name__)
+
 
 # app.css.append_css({"external_url": "https://max.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"})
 
@@ -1043,6 +952,14 @@ app.index_string = r'''
         <footer>
             {%config%}
             {%scripts%}
+            <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                tex2jax: {
+                inlineMath: [ ['$','$'],],
+                processEscapes: true
+                }
+            });
+            </script>
             {%renderer%}
         </footer>
     </body>
@@ -1102,7 +1019,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                          {'label': '5f', 'value': '5f'},
                                                          {'label': '6f', 'value': '6f'},
                                                         ],
-                                                 value=['2p'],
+                                                 value=['3dxy'],
                                                 labelStyle={
                                                             'maxwidth' : '20px',
                                                             'display': 'inline-block'
@@ -1151,7 +1068,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                            'value': '3DWF'
                                                           }
                                                          ],
-                                                 value='RDF',
+                                                 value='3DWF',
                                                  labelStyle={
                                                              'float':'left'
                                                              }
@@ -1281,7 +1198,7 @@ plot_options_2d = [
                                                   id = 'LowerxInput',
                                                   placeholder = 0,
                                                   type = 'number',
-                                                  min = 0,
+                                                  min = -10,
                                                   max = 100,
                                                   value = 0,
                                                   style = {'width':'40%'}
@@ -1516,10 +1433,10 @@ plot_options_3d = [
                                                                        'label': '0', 
                                                                        'value': 1.0
                                                                       },
-                                                                      {
-                                                                       'label': '1/4',
-                                                                       'value': 0.5
-                                                                      },
+                                                                      # {
+                                                                      #  'label': '1/4',
+                                                                      #  'value': 0.5
+                                                                      # },
                                                                       {
                                                                        'label': '1/2',
                                                                        'value': 0.
@@ -1815,7 +1732,9 @@ html.Footer(style = {
                              style = {'color':'white'},
                              children = 'www.kragskow.com')
                      ]
-           )
+           ),
+refresh_plots,
+mathjax_script
 ])
 
 def toggle_pob(on_off) :
@@ -1932,8 +1851,8 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
     # Plot radial wavefunction or radial distribution function
     if WFFlag == 2 or WFFlag == 1:
         return {
-                'data': get_2d_plots(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness),
-                'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName)
+                'data': get_2d_plots(Orbitals, max(lowerxlim,0), max(upperxlim,0), WFFlag, Thickness),
+                'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName, lowerxlim, upperxlim)
                 }, modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name), toggle_pob('on'), toggle_pob('off'), orb_checklist('2d')
 
     # Plot wavefunction isosurface
@@ -2023,7 +1942,7 @@ def ax_config_3d():
                      margin=dict(l=20, r=30, t=30, b=20),
                     )
 
-def ax_config_2d(xgridinput, ygridinput, TextSize, WFName):
+def ax_config_2d(xgridinput, ygridinput, TextSize, WFName, xlow, xup):
 
     #Turn on x axis gridlines
     if xgridinput == ['xgridval']:
@@ -2043,8 +1962,9 @@ def ax_config_2d(xgridinput, ygridinput, TextSize, WFName):
                               'showgrid'  : xgrid,
                               'zeroline'  : False,
                               'showline'  : True,
+                              'range'     : [xlow, xup],
                               'title' : {
-                                         'text' : r'$\text{Distance}  \ \ (a_0)$',
+                                         'text' : "Distance ($a_0$)",
                                          'font' :
                                                  {
                                                   'size' : TextSize
