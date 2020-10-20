@@ -82,124 +82,6 @@ def radial_d(Orb,r):
 ########################################## Lobe bounds #############################################
 ####################################################################################################
 
-def dz_domain(Orb):
-    # !!! Returns an array containing the bounds
-    # of r for each lobe of the requested dz2 orbital
-
-    if Orb.find('3d') == 0:
-
-        num_lobes = 2
-
-        lobe_1_lower =  0.8347013549589228 
-        lobe_1_upper = 19.84715220152567 
-
-        ring_1_lower = 1.269074408199
-        ring_1_upper = 16.749590243795
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
-        ring_domains = np.array([[ring_1_lower, ring_1_upper]])
-
-    if Orb.find('4d') == 0:
-
-        num_lobes = 4
-
-        lobe_1_lower = 0.9717206679891478 
-        lobe_1_upper = 10.947850494510153
-
-        lobe_2_lower = 13.281145273906876  
-        lobe_2_upper = 30.71438185359193 
-
-        ring_1_lower = 1.506089675248620585
-        ring_1_upper = 10.009091147538
-
-        ring_2_lower = 15.13702469934
-        ring_2_upper = 24.553806957999903
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[lobe_2_lower, lobe_2_upper]])
-        ring_domains = np.array([[ring_1_lower, ring_1_upper],[ring_2_lower, ring_2_upper]])
-
-    if Orb.find('5d') == 0:
-
-        num_lobes = 6
-
-        lobe_1_lower = 0.31412614081764606 
-        lobe_1_upper = 10.755951991517627 
-
-        lobe_2_lower = 11.018457454488443 
-        lobe_2_upper = 23.74309091422983 
-
-        lobe_3_lower = 24.49747212710316 
-        lobe_3_upper = 64.21693289152138 
-
-        ring_1_lower = 0.4549182747066
-        ring_1_upper = 10.629142563719
-
-        ring_2_lower = 11.15480678351499755
-        ring_2_upper = 23.38146805779990
-
-        ring_3_lower = 24.8948878699568
-        ring_3_upper = 58.470343060020994
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],
-                                 [lobe_2_lower, lobe_2_upper],
-                                 [lobe_3_lower, lobe_3_upper]])
-        ring_domains = np.array([[ring_1_lower, ring_1_upper],
-                                 [ring_2_lower, ring_2_upper],
-                                 [ring_3_lower, ring_3_upper]])
-
-    if Orb.find('6d') == 0:
-
-        num_lobes = 8
-
-        lobe_1_lower = 0.3565338974235
-        lobe_1_upper = 10.272518865906342 
-
-        lobe_2_lower = 10.590710660732219 
-        lobe_2_upper = 21.562394639355578 
-
-        lobe_3_lower = 22.37410716607108
-        lobe_3_upper = 38.69673874491944 
-
-        lobe_4_lower = 40.56767789682293 
-        lobe_4_upper = 85.63716821662403 
-
-        ring_1_lower = 0.518213089425
-        ring_1_upper = 10.120097300417532
-
-        ring_2_lower = 10.75781337004409
-        ring_2_upper = 21.175221605007522
-
-        ring_3_lower = 22.8072828487972
-        ring_3_upper = 37.8107854483668
-
-        ring_4_lower = 41.59113348635129
-        ring_4_upper = 77.715204335756
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],
-                                 [lobe_2_lower, lobe_2_upper],
-                                 [lobe_3_lower, lobe_3_upper],
-                                 [lobe_4_lower, lobe_4_upper]])
-        ring_domains = np.array([[ring_1_lower, ring_1_upper],
-                                 [ring_2_lower, ring_2_upper],
-                                 [ring_3_lower, ring_3_upper],
-                                 [ring_4_lower, ring_4_upper]])
-
-    return lobe_domains, ring_domains, num_lobes
-
-def dxy_domain(Orb):
-
-    if Orb.find('3dxy') == 0:
-
-        num_lobes = 2
-
-        lobe_1_lower = 0.25762972206931206
-        lobe_1_upper = 30.2964334304816 
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
-
-    return lobe_domains, num_lobes
-
-
 def r_domain(Orb):
     # !!! Returns an array containing the bounds of r for each lobe of the requested orbital
 
@@ -286,81 +168,6 @@ def r_domain(Orb):
     
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper],[ lobe_4_lower, lobe_4_upper],[ lobe_5_lower, lobe_5_upper]])
 
-#####3d orbital#####
-
-    if Orb == '3d':
-
-        num_lobes = 2
-
-        lobe_1_lower = 0.0305424
-        lobe_1_upper = 11.973154-0.03054255
-       
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
-
-
-#####4d orbitals other than z2#####
-
-    if Orb == '4d':
-
-        lobe_1_lower = 0.9717206679892
-        lobe_1_upper = 10.9478504945101
-        
-        lobe_1_lower = 13.2811452739069
-        lobe_2_upper = 30.7143818535919
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper]])
-    
-#####5d orbitals other than z2#####
-
-    if Orb=='5d':
-
-        lobe_1_lower = 0.6156
-        lobe_1_upper = 10.3787
-        
-        lobe_2_lower = 11.3617
-        lobe_2_upper = 12.1429
-        
-        lobe_3_lower = 25.5091
-        lobe_3_upper = 33.2447
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper]])
-    
-#####4f orbital#####
-
-    if Orb == '4f':
-        lobe_1_lower = 0.0305424
-        lobe_1_upper = 11.973154-0.03054255
-       
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
-
-#####5f orbital#####
-
-    if Orb == '5f':
-
-        lobe_1_lower = 0.0521075737439532  
-        lobe_1_upper =  5.660956689880348059366305 - 0.0521075737439532
-        
-        lobe_2_lower = 6.382478125927591589829610
-        lobe_2_upper = 20.94330871272566767441322 - 6.382478125927591589829610
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper]])
-    
-#####6f orbital#####
-
-    if Orb=='6f':
-
-        lobe_1_lower = 0.0791834876755957
-        lobe_1_upper =  4.99478167864062
-        
-        lobe_2_lower = 6.07254257647759
-        lobe_2_upper =  6.79154128088496
-        
-        lobe_3_lower = 16.5661209046895
-        lobe_3_upper =  13.745982260283
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper]])
-
-
     return lobe_domains, num_lobes
 
 ####################################################################################################
@@ -431,7 +238,7 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
     return fig, upper, lower
 
-def plot_s_orb(n, orbital_input,  colours, fig):
+def plot_s_orb(n, orbital_input,  colours, fig, cutaway):
 
     # Set contour level
     if n < 5:
@@ -568,7 +375,7 @@ def plot_p_orb(n, orbital_input,  colours, fig, cutaway):
 
     fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
 
-    return fig, -10, 10
+    return fig, -orb_r_bounds[-1,1], orb_r_bounds[-1,1]
 
 def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, 
                r_steps, r_mini_steps):
@@ -1045,7 +852,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                          {'label': '5f', 'value': '5f'},
                                                          {'label': '6f', 'value': '6f'},
                                                         ],
-                                                 value=['6d_z2'],
+                                                 value=['3d'],
                                                 labelStyle={
                                                             'maxwidth' : '20px',
                                                             'display': 'inline-block'
@@ -1094,7 +901,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                            'value': '3DWF'
                                                           }
                                                          ],
-                                                 value='3DWF',
+                                                 value='RDF',
                                                  labelStyle={
                                                              'float':'left'
                                                              }
