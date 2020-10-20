@@ -11,8 +11,7 @@ from plotly.subplots import make_subplots
 import dash_defer_js_import as dji
 from scipy.special import sph_harm
 from plotly.subplots import make_subplots
-from sympy.physics.wigner import wigner_3j, wigner_6j
-from sympy import S
+
 
 ####################################################################################################
 ####################################### Radial Functions ###########################################
@@ -1019,7 +1018,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                          {'label': '5f', 'value': '5f'},
                                                          {'label': '6f', 'value': '6f'},
                                                         ],
-                                                 value=['3dxy'],
+                                                 value=['2p', '3p', '4p'],
                                                 labelStyle={
                                                             'maxwidth' : '20px',
                                                             'display': 'inline-block'
@@ -1068,7 +1067,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                            'value': '3DWF'
                                                           }
                                                          ],
-                                                 value='3DWF',
+                                                 value='RDF',
                                                  labelStyle={
                                                              'float':'left'
                                                              }
@@ -1964,7 +1963,7 @@ def ax_config_2d(xgridinput, ygridinput, TextSize, WFName, xlow, xup):
                               'showline'  : True,
                               'range'     : [xlow, xup],
                               'title' : {
-                                         'text' : "Distance ($a_0$)",
+                                         'text' : "$(Distance a_0)$",
                                          'font' :
                                                  {
                                                   'size' : TextSize
