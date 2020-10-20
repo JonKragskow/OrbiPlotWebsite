@@ -402,11 +402,11 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
     if l == 's':
 
-        data = plot_s_orb(n, orbital_input, colours, fig, cutaway)
+        fig, upper, lower = plot_s_orb(n, orbital_input, colours, fig, cutaway)
 
     elif l == 'p':
 
-        data = plot_p_orb(n, orbital_input, colours, fig, cutaway)
+        fig, upper, lower = plot_p_orb(n, orbital_input, colours, fig, cutaway)
 
     elif l == 'd':  
 
@@ -414,17 +414,17 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
         if orbital_input.find('xy') != -1:
 
-            data = plot_dxy_orb(n, orbital_input,colours, fig, cutaway)
+            fig, upper, lower = plot_dxy_orb(n, orbital_input,colours, fig, cutaway)
 
         else:
 
-            data = plot_dz_orb(n, orbital_input,colours, fig, cutaway)
+            fig, upper, lower = plot_dz_orb(n, orbital_input,colours, fig, cutaway)
 
     elif l == 'f':
 
-        data = plot_f_orb(n, colour_1, colour_2)
+        fig, upper, lower = plot_f_orb(n, colour_1, colour_2)
 
-    return data
+    return fig, upper, lower
 
 def plot_s_orb(n, orbital_input,  colours, fig):
 
@@ -563,7 +563,7 @@ def plot_p_orb(n, orbital_input,  colours, fig, cutaway):
 
     fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
 
-    return fig
+    return fig, -10, 10
 
 def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, 
                r_steps, r_mini_steps):
@@ -593,12 +593,20 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
 
 
     if n == 3:
+        upper = 30
+        lower = -30
         x,y,z = np.mgrid[-30:30:60j, -30:30*cutaway:60j, -30:30:60j]
     elif n == 4:
+        upper = 42
+        lower = -42
         x,y,z = np.mgrid[-42:42:60j, -42:42*cutaway:60j, -42:42:60j]
     elif n == 5:
+        upper = 65
+        lower = -65
         x,y,z = np.mgrid[-65:65:60j, -65:65*cutaway:60j, -65:65:60j]
     elif n == 6:
+        upper = 90
+        lower = -90
         x,y,z = np.mgrid[-90:90:110j, -90:90*cutaway:110j, -90:90:110j]
 
     r = np.sqrt(x**2 + y**2 + z**2)
@@ -643,19 +651,27 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
         showscale=False,
         colorscale=colours
         ))
-    return fig
+    return fig, upper, lower
 
 
 def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
 
 
     if n == 3:
-        x,y,z = np.mgrid[-25:25:45j, -25:25:45j, -25:25*cutaway:45j]
+        upper = 30
+        lower = -30
+        x,y,z = np.mgrid[-30:30:60j, -30:30*cutaway:60j, -30:30:60j]
     elif n == 4:
-        x,y,z = np.mgrid[-42:42:50j, -42:42:50j, -42:42*cutaway:50j]
+        upper = 42
+        lower = -42
+        x,y,z = np.mgrid[-42:42:60j, -42:42*cutaway:60j, -42:42:60j]
     elif n == 5:
+        upper = 60
+        lower = -60
         x,y,z = np.mgrid[-60:60:50j, -60:60:50j, -60:60*cutaway:50j]
     elif n == 6:
+        upper = 77
+        lower = -77
         x,y,z = np.mgrid[-77:77:60j, -77:77:60j, -77:77*cutaway:60j]
 
     r = np.sqrt(x**2 + y**2 + z**2)
@@ -697,7 +713,7 @@ def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
         showscale=False,
         colorscale=colours
         ))
-    return fig
+    return fig, upper, lower
 
 
 def calc_dz_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps,
@@ -1863,9 +1879,9 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
                                 specs=[[{'is_3d': True}]]
                                )
 
-            fig.update_layout(ax_config_3d())
+            fig, upper, lower = OrbCalc(Orbitals[0], colour_name_3d, fig, np.float64(cutaway))
 
-            fig = OrbCalc(Orbitals[0], colour_name_3d, fig, np.float64(cutaway))
+            fig.update_layout(ax_config_3d(upper, lower))
 
             return  fig,modebar_config(PlotFormat, PlotHeight, PlotWidth, Orbitals[0]+' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
         else:
@@ -1891,7 +1907,7 @@ def get_2d_plots(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
     return traces
 
 
-def ax_config_3d():
+def ax_config_3d(upper=0, lower=0):
     return go.Layout(
                      hovermode=False,
                      dragmode="orbit",
@@ -1907,7 +1923,8 @@ def ax_config_3d():
                                            showline=False,
                                            ticks='',
                                            showticklabels=False,
-                                           backgroundcolor='rgb(255, 255,255)'
+                                           backgroundcolor='rgb(255, 255,255)',
+                                           range=[lower, upper]
                                           ),
                                 yaxis=dict(
                                            gridcolor='rgb(255, 255, 255)',
@@ -1918,7 +1935,8 @@ def ax_config_3d():
                                            showline=False,
                                            ticks='',
                                            showticklabels=False,
-                                           backgroundcolor='rgb(255, 255,255)'
+                                           backgroundcolor='rgb(255, 255,255)',
+                                           range=[lower, upper]
                                           ),
                                 zaxis=dict(
                                            gridcolor='rgb(255, 255, 255)',
@@ -1929,7 +1947,8 @@ def ax_config_3d():
                                            showline=False,
                                            ticks='',
                                            showticklabels=False,
-                                           backgroundcolor='rgb(255, 255,255)'
+                                           backgroundcolor='rgb(255, 255,255)',
+                                           range=[lower, upper]
                                           ),
                                 aspectratio=dict(
                                                  x=1,
