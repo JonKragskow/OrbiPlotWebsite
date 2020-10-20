@@ -1754,9 +1754,9 @@ html.Footer(style = {
                     }, 
             children=[
                       html.P(children = ['Author: Jon Kragskow']),
-                      html.A(href = 'www.kragskow.com',
+                      html.A(href = 'https://www.kragskow.com/',
                              style = {'color':'white'},
-                             children = 'www.kragskow.com')
+                             children = 'https://www.kragskow.com/')
                      ]
            ),
 refresh_plots,
