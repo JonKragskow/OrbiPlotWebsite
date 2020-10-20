@@ -398,8 +398,6 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
     # Get orbital n value and name
     n, l = get_orb_name(orbital_input)
 
-    print(cutaway, flush=True)
-
     if l == 's':
 
         fig, upper, lower = plot_s_orb(n, orbital_input, colours, fig, cutaway)
@@ -412,7 +410,7 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
         print(orbital_input, orbital_input.find('xy'), flush=True)
 
-        if orbital_input.find('xy') != -1:
+        if 'xy' in orbital_input:
 
             fig, upper, lower = plot_dxy_orb(n, orbital_input,colours, fig, cutaway)
 
@@ -422,7 +420,14 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
     elif l == 'f':
 
-        fig, upper, lower = plot_f_orb(n, colour_1, colour_2)
+        if 'xy' in orbital_input:
+
+            fig, upper, lower = plot_fz_orb(n, orbital_input,colours, fig, cutaway)
+
+        else:
+
+            fig, upper, lower = plot_fz_orb(n, orbital_input,colours, fig, cutaway)
+
 
     return fig, upper, lower
 
@@ -591,23 +596,24 @@ def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps,
 
 def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
 
-
     if n == 3:
-        upper = 30
-        lower = -30
-        x,y,z = np.mgrid[-30:30:60j, -30:30*cutaway:60j, -30:30:60j]
+        upper = 40
+        lower = -40
+        step  = 60j
     elif n == 4:
-        upper = 42
-        lower = -42
-        x,y,z = np.mgrid[-42:42:60j, -42:42*cutaway:60j, -42:42:60j]
+        upper = 47
+        lower = -47
+        step  = 60j
     elif n == 5:
-        upper = 65
-        lower = -65
-        x,y,z = np.mgrid[-65:65:60j, -65:65*cutaway:60j, -65:65:60j]
-    elif n == 6:
-        upper = 90
-        lower = -90
-        x,y,z = np.mgrid[-90:90:110j, -90:90*cutaway:110j, -90:90:110j]
+        upper = 74
+        lower = -74
+        step  = 60j
+    elif n ==6:
+        upper = 105
+        lower = -105
+        step  = 80j
+
+    x,y,z = np.mgrid[upper:lower:step, upper:lower*cutaway:step, upper:lower:step]
 
     r = np.sqrt(x**2 + y**2 + z**2)
 
@@ -629,13 +635,13 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
     print(np.shape(x), flush=True)
 
     if n == 3:
-        ival=0.04
+        ival=0.005
     elif n == 4:
-        ival = 0.04
+        ival = 0.02
     elif n == 5:
-        ival = 0.04
+        ival = 0.01
     elif n == 6:
-        ival = 0.04
+        ival = 0.01
 
     print(ival, flush=True)
 
@@ -656,23 +662,24 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
 
 def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
 
-
     if n == 3:
         upper = 30
         lower = -30
-        x,y,z = np.mgrid[-30:30:60j, -30:30*cutaway:60j, -30:30:60j]
+        step  = 60j
     elif n == 4:
         upper = 42
         lower = -42
-        x,y,z = np.mgrid[-42:42:60j, -42:42*cutaway:60j, -42:42:60j]
+        step  = 60j
     elif n == 5:
         upper = 60
         lower = -60
-        x,y,z = np.mgrid[-60:60:50j, -60:60:50j, -60:60*cutaway:50j]
-    elif n == 6:
+        step  = 60j
+    elif n ==6:
         upper = 77
         lower = -77
-        x,y,z = np.mgrid[-77:77:60j, -77:77:60j, -77:77*cutaway:60j]
+        step  = 60j
+
+    x,y,z = np.mgrid[upper:lower:step, upper:lower:step, upper:lower*cutaway:step]
 
     r = np.sqrt(x**2 + y**2 + z**2)
 
@@ -690,8 +697,6 @@ def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
     Ang = x*y
 
     wav = Rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*Ang
-
-    print(x)
 
     if n == 3:
         ival=0.005
@@ -715,55 +720,61 @@ def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
         ))
     return fig, upper, lower
 
+def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
 
-def calc_dz_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps,
-                r_mini_steps, pos):
+    if n == 4:
+        upper = 45
+        lower = -45
+        step  = 60j
+    elif n == 5:
+        upper = 70
+        lower = -70
+        step  = 60j
+    elif n ==6:
+        upper = 90
+        lower = -90
+        step  = 70j
 
-    gap = np.abs(bounds[1] - bounds[0])
+    x,y,z = np.mgrid[upper:lower*cutaway:step, upper:lower:step, upper:lower:step]
 
-    #Array of r values for each lobe
-    # Sample more frequently closer to the pole of the lobe
-    r =             np.linspace(bounds[0], bounds[0] + gap*0.025, r_mini_steps)
-    r = np.append(r,np.linspace(bounds[0]+ gap*0.025, bounds[0] + gap*0.5, r_mini_steps))
-    r = np.append(r,np.linspace(bounds[0]+ gap*0.5, bounds[0] + gap*0.975, r_mini_steps))
-    r = np.append(r,np.linspace(bounds[0]+ gap*0.975, bounds[0] + gap, r_mini_steps))
+    r = np.sqrt(x**2 + y**2 + z**2)
 
-    angm, rm = np.meshgrid(ang, r)
+    rho = 2*r/n
 
-    #Calculate z(r)
-    if pos :
-        zor = d_z_ax_pos(n,rm,radial_d(orbital_input,rm),c)
-    else :
-        zor = d_z_ax_neg(n,rm,radial_d(orbital_input,rm),c)
+    if n == 4:
+        Rad = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.)
+    elif n == 5:
+        Rad = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.)
+    elif n == 6:
+        Rad = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.)
 
-    x = np.sqrt(rm**2. - zor**2.)*np.cos(angm)
-    y = np.sqrt(rm**2. - zor**2.)*np.sin(angm)
-    z = zor
+    Ang = 6./16. * np.sqrt(1/np.pi) * (35.*z**4 - 30.*z**2*r**2 + 3.*r**4)/(r**4)
 
-    return x, y, z
+    wav = Rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*Ang
 
-def calc_dxy_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps,
-                r_mini_steps):
+    print('should be calculating here...', flush=True)
 
-    gap = np.abs(bounds[1] - bounds[0])
+    print(n, flush=True)
 
-    #Array of r values for each lobe
-    # Sample more frequently closer to the pole of the lobe
-    r =             np.linspace(bounds[0], bounds[0] + gap*0.025, r_mini_steps)
-    r = np.append(r,np.linspace(bounds[0]+ gap*0.025, bounds[0] + gap*0.5, r_mini_steps))
-    r = np.append(r,np.linspace(bounds[0]+ gap*0.5, bounds[0] + gap*0.975, r_mini_steps))
-    r = np.append(r,np.linspace(bounds[0]+ gap*0.975, bounds[1], r_mini_steps))
-
-    angm, rm = np.meshgrid(ang, r)
-
-    #Calculate g(r)
-    g_r = rm**2. - c * float(n)**2. * np.exp(rm/float(n)) * np.sqrt(np.pi/15.) / np.abs(radial_d(orbital_input,rm))
-
-    x = np.sqrt(g_r/2.)*np.cos(angm)
-    z = np.sqrt(g_r)*np.sin(angm)
-    y = np.sqrt(rm**2. -x**2. -z**2.)
-    
-    return x, y, z
+    if n == 4:
+        ival = 0.000005
+    elif n == 5:
+        ival = 0.000005
+    elif n == 6:
+        ival = 0.000005
+  
+    fig.add_trace(go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=wav.flatten(),
+        isomin=-ival,
+        isomax=ival,
+        caps=dict(x_show=False, y_show=False, z_show=False),
+        showscale=False,
+        colorscale=colours
+        ))
+    return fig, upper, lower
 
 
 def swap(colour_1, colour_2):
@@ -1034,7 +1045,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                          {'label': '5f', 'value': '5f'},
                                                          {'label': '6f', 'value': '6f'},
                                                         ],
-                                                 value=['2p', '3p', '4p'],
+                                                 value=['6d_z2'],
                                                 labelStyle={
                                                             'maxwidth' : '20px',
                                                             'display': 'inline-block'
@@ -1083,7 +1094,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                            'value': '3DWF'
                                                           }
                                                          ],
-                                                 value='RDF',
+                                                 value='3DWF',
                                                  labelStyle={
                                                              'float':'left'
                                                              }
@@ -1811,6 +1822,9 @@ def orb_checklist(dimension):
                {'label': '4dxy', 'value': '4dxy'},
                {'label': '5dxy', 'value': '5dxy'},
                {'label': '6dxy', 'value': '6dxy'},
+               {'label': '4fz³', 'value': '4fz3'},
+               {'label': '5fz³', 'value': '5fz3'},
+               {'label': '6fz³', 'value': '6fz3'},
               ]
 ##################################################################################################################################
 ########################################################### Callbacks ############################################################
