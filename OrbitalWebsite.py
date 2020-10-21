@@ -829,6 +829,9 @@ app.index_string = r'''
     <head>
         {%metas%}
         <title>Orbiplot</title>
+        <meta name="description" content="Online atomic orbital viewer">
+        <meta name="keywords" content="Online atomic orbital viewer">
+        <meta name="author" content="Jon Kragskow">
         {%favicon%}
         {%css%}
     </head>
