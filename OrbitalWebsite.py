@@ -229,7 +229,7 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
         if 'xy' in orbital_input:
 
-            fig, upper, lower = plot_fz_orb(n, orbital_input,colours, fig, cutaway)
+            fig, upper, lower = plot_fxy_orb(n, orbital_input,colours, fig, cutaway)
 
         else:
 
@@ -368,9 +368,9 @@ def plot_p_orb(n, orbital_input,  colours, fig, cutaway):
             z = np.append(z, zt, axis=0)
             co = np.append(co, cot1, axis=0)
 
-        x = np.append(x, xt, axis=0)
-        y = np.append(y, yt, axis=0)
-        z = np.append(z, -zt, axis=0)
+        x  = np.append(x, xt, axis=0)
+        y  = np.append(y, yt, axis=0)
+        z  = np.append(z, -zt, axis=0)
         co = np.append(co, cot2, axis=0)
 
     fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
@@ -427,17 +427,17 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
     rho = 2*r/n
 
     if n == 3:
-        Rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
+        rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
     elif n == 4:
-        Rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
+        rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
     elif n == 5:
-        Rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
+        rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
     elif n == 6:
-        Rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
+        rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
 
-    Ang = 2*z**2-x**2-y**2
+    ang = 2*z**2-x**2-y**2
 
-    wav = Rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*Ang
+    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
 
     print(np.shape(x), flush=True)
 
@@ -493,17 +493,17 @@ def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
     rho = 2*r/n
 
     if n == 3:
-        Rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
+        rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
     elif n == 4:
-        Rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
+        rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
     elif n == 5:
-        Rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
+        rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
     elif n == 6:
-        Rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
+        rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
 
-    Ang = x*y
+    ang = x*y
 
-    wav = Rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*Ang
+    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
 
     if n == 3:
         ival=0.005
@@ -549,15 +549,67 @@ def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
     rho = 2*r/n
 
     if n == 4:
-        Rad = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.)
+        rad = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.)
     elif n == 5:
-        Rad = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.)
+        rad = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.)
     elif n == 6:
-        Rad = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.)
+        rad = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.)
 
-    Ang = 6./16. * np.sqrt(1/np.pi) * (35.*z**4 - 30.*z**2*r**2 + 3.*r**4)/(r**4)
+    ang = 6./16. * np.sqrt(1/np.pi) * (35.*z**4 - 30.*z**2*r**2 + 3.*r**4)/(r**4)
 
-    wav = Rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*Ang
+    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
+
+    if n == 4:
+        ival = 0.000005
+    elif n == 5:
+        ival = 0.000005
+    elif n == 6:
+        ival = 0.000005
+  
+    fig.add_trace(go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=wav.flatten(),
+        isomin=-ival,
+        isomax=ival,
+        caps=dict(x_show=False, y_show=False, z_show=False),
+        showscale=False,
+        colorscale=colours
+        ))
+    return fig, upper, lower
+
+def plot_fxy_orb(n, orbital_input, colours, fig, cutaway):
+
+    if n == 4:
+        upper = 45
+        lower = -45
+        step  = 60j
+    elif n == 5:
+        upper = 70
+        lower = -70
+        step  = 60j
+    elif n ==6:
+        upper = 90
+        lower = -90
+        step  = 70j
+
+    x,y,z = np.mgrid[upper:lower*cutaway:step, upper:lower:step, upper:lower:step]
+
+    r = np.sqrt(x**2 + y**2 + z**2)
+
+    rho = 2*r/n
+
+    if n == 4:
+        rad = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.)
+    elif n == 5:
+        rad = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.)
+    elif n == 6:
+        rad = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.)
+
+    ang = 3./4. * np.sqrt(35./(2*np.pi)) * (3*x**2 - y**2)*y*z/(r**4)
+
+    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
 
     print('should be calculating here...', flush=True)
 
@@ -1632,6 +1684,10 @@ def orb_checklist(dimension):
                {'label': '4fz³', 'value': '4fz3'},
                {'label': '5fz³', 'value': '5fz3'},
                {'label': '6fz³', 'value': '6fz3'},
+               {'label': '4fxyz', 'value': '4fxyz'},
+               {'label': '5fxyz', 'value': '5fxyz'},
+               {'label': '6fxyz', 'value': '6fxyz'},
+
               ]
 ##################################################################################################################################
 ########################################################### Callbacks ############################################################
