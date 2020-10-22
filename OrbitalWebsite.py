@@ -551,7 +551,7 @@ def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
 
     rad = radial_f(n, 2*r/n)
 
-    ang = 6./16. * np.sqrt(1/np.pi) * (35.*z**4 - 30.*z**2*r**2 + 3.*r**4)/(r**4)
+    ang = 0.25 * np.sqrt(7/np.pi) * z*(2*z**2-3*x**2-3*y**2)/(r**3)
 
     wav = rad*ang
 
