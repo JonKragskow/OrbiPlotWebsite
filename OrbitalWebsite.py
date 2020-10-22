@@ -20,63 +20,103 @@ from plotly.subplots import make_subplots
 def p_z_ax(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
 
-def d_z_ax_pos(n,r,f,c): 
-    return np.sqrt(r**2 * 1./3. + n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1./(3.*np.abs(f)))
+############################ Radial functions #########################
+def radial_s(n, rho):
+    """
+    Calculates radial Wavefunction of s orbital
+    for the specified principal quantum number
 
-def d_z_ax_neg(n,r,f,c):
-    return np.sqrt(r**2 * 1./3. - n**2 * c * np.exp(r/n) * np.sqrt(np.pi/5) * 1./(3.*np.abs(f)))
+    Input:
+        n (int)  ::  principal quantum number
+        rho (numpy float array) :: 2.*r/n, where r^2 = x^2+y^2+z^2
 
-def radial_s(Orb,r):
-    # !!! Radial Wavefunction of s orbitals
-    if Orb=='1s': 
-        return 2.*np.exp(-r)
- 
-def radial_p(Orb,r):
-    # !!! Radial Wavefunctions of p orbitals
-    if Orb=='2p': 
-        return 1./(2.*np.sqrt(6.))
- 
-    if Orb=='3p': 
-        return (4. - 2.*r/3.)/(9*np.sqrt(6.))
+    Returns:
+        rad (numpy float array) :: radial wavefunction
+    """
+    if n == 1:
+        rad = 2.*np.exp(-rho/2.)
+    if n == 2:
+        rad = 1./(2.*np.sqrt(2.))*(2.-rho)*np.exp(-rho/2.)
+    if n == 3:
+        rad = 1./(9.*np.sqrt(3.))*(6.-6.*rho+rho**2.)*np.exp(-rho/2.)
+    if n == 4:
+        rad = (1./96.)*(24.-36.*rho+12.*rho**2.-rho**3.)*np.exp(-rho/2.)
+    if n == 5:
+        rad = (1./(300.*np.sqrt(5.)))*(120.-240.*rho+120.*rho**2.-20.*rho**3.+rho**4.)*np.exp(-rho/2.)
+    if n == 6:
+        rad = (1./(2160.*np.sqrt(6.)))*(720.-1800.*rho+1200.*rho**2.-300.*rho**3.+30.*rho**4.-rho**5.)*np.exp(-rho/2.)
 
-    if Orb=='4p': 
-        return (20. - 5.*r + (r/2.)**2.)/(32.*np.sqrt(15.))
+    return rad
 
-    if Orb=='5p': 
-        return (120. - 90.*(2*r/5.) + 18.*(2*r/5.)**2. - (2.*r/5.)**3.)/(150.*np.sqrt(30.))
+def radial_p(n, r):
+    """
+    Calculates radial Wavefunction of p orbital
+    for the specified principal quantum number
 
-    if Orb=='6p': 
-        return (840. - 840.*r/3. + 252.*(r/3.)**2. - 28.*(r/3.)**3. + (r/3.)**4.)/(432.*np.sqrt(210.))
+    Input:
+        n (int)  ::  principal quantum number
+        rho (numpy float array) :: 2.*r/n, where r^2 = x^2+y^2+z^2
 
-############################ d Orbital functions #########################
+    Returns:
+        rad (numpy float array) :: radial wavefunction
+    """
 
-def radial_d(Orb,r): 
-    # !!! Radial Wavefunctions of d orbitals
-    if Orb.find('3d') == 0: 
-        return 1./(9.*np.sqrt(30.))
+    if n == 2:
+        rad = 1./(2.*np.sqrt(6.))
+    elif n == 3:
+        rad = (4. - 2.*r/3.)/(9*np.sqrt(6.))
+    elif n == 4:
+        rad = (20. - 5.*r + (r/2.)**2.)/(32.*np.sqrt(15.))
+    elif n == 5:
+        rad = (120. - 90.*(2*r/5.) + 18.*(2*r/5.)**2. - (2.*r/5.)**3.)/(150.*np.sqrt(30.))
+    elif n == 6:
+        rad = (840. - 840.*r/3. + 252.*(r/3.)**2. - 28.*(r/3.)**3. + (r/3.)**4.)/(432.*np.sqrt(210.))
+    return rad
 
-    if Orb.find('4d') == 0: 
-        return (6.-r/2.)/(96.*np.sqrt(5.))
+def radial_d(n,rho): 
+    """
+    Calculates radial Wavefunction of d orbital
+    for the specified principal quantum number
 
-    if Orb.find('5d') == 0: 
-        return (42. - 28.*r/5. + (2.*r/5.)**2.)/(150.*np.sqrt(70.))
+    Input:
+        n (int)  ::  principal quantum number
+        rho (numpy float array) :: 2.*r/n, where r^2 = x^2+y^2+z^2
 
-    if Orb.find('6d') == 0: 
-        return (336. - 168.*(r/3.) + 24.*(r/3.)**2. - (r/3.)**3.)/(864.*np.sqrt(105.))
+    Returns:
+        rad (numpy float array) :: radial wavefunction
+    """
 
-############################f Orbital Wavefunction functions#########################
+    if n == 3:
+        rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
+    elif n == 4:
+        rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
+    elif n == 5:
+        rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
+    elif n == 6:
+        rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
 
-#def radial_f(Orb,r): 
-#    if Orb=='4f': 
+    return rad
 
-#
-#    if Orb=='5f': 
+def radial_f(n,rho): 
+    """
+    Calculates radial Wavefunction of f orbital
+    for the specified principal quantum number
 
-#
-#    if Orb=='6f': 
+    Input:
+        n (int)  ::  principal quantum number
+        rho (numpy float array) :: 2.*r/n, where r^2 = x^2+y^2+z^2
 
-#    return out
+    Returns:
+        rad (numpy float array) :: radial wavefunction
+    """     
+    if n == 4:
+        rad = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.)
+    elif n == 5:
+        rad = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.)
+    elif n == 6:
+        rad = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.)
 
+    return rad
 
 ####################################################################################################
 ########################################## Lobe bounds #############################################
@@ -85,14 +125,7 @@ def radial_d(Orb,r):
 def r_domain(Orb):
     # !!! Returns an array containing the bounds of r for each lobe of the requested orbital
 
-    if Orb == '1s':
-        num_lobes = 2
-        lobe_1_lower = 0.01
-        lobe_1_upper = 0.05
-
-        lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
-
-#####2p orbital#####
+    #####2p orbital#####
     if Orb == '2p':
         num_lobes = 2
         lobe_1_lower = 0.030542415534
@@ -100,7 +133,7 @@ def r_domain(Orb):
        
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
 
-#####3p orbital#####
+    #####3p orbital#####
     if Orb == '3p':
         num_lobes = 4
         lobe_1_lower = 0.0521008719026 
@@ -111,7 +144,7 @@ def r_domain(Orb):
 
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper]])
     
-#####4p orbital#####
+    #####4p orbital#####
 
     if Orb=='4p':
         num_lobes = 6
@@ -127,7 +160,7 @@ def r_domain(Orb):
 
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper]])
     
-#####5p orbital#####
+    #####5p orbital#####
 
     if Orb=='5p':
         num_lobes = 8
@@ -146,7 +179,7 @@ def r_domain(Orb):
 
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper],[ lobe_2_lower, lobe_2_upper],[ lobe_3_lower, lobe_3_upper],[ lobe_4_lower, lobe_4_upper]])
     
-#####6p orbital#####
+    #####6p orbital#####
     
     if Orb=='6p':
         num_lobes = 10
@@ -238,83 +271,73 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
     return fig, upper, lower
 
-def plot_s_orb(n, orbital_input,  colours, fig, cutaway):
+def plot_s_orb(n, orbital_input, colours, fig, cutaway):
 
-    # Set contour level
-    if n < 5:
-        c = 0.003
-    else:
-        c = 0.0003
+    if n == 1:
+        upper =  10
+        lower = -10
+        step  =  50j
+    if n == 2:
+        upper =  17
+        lower = -17
+        step  =  50j
+    if n == 3:
+        upper =  30
+        lower = -30
+        step  =  50j
+    elif n == 4:
+        upper =  30
+        lower = -30
+        step  =  50j
+    elif n == 5:
+        upper =  30
+        lower = -30
+        step  =  50j
+    elif n ==6:
+        upper =  75
+        lower = -75
+        step  =  60j
 
-    # Set num steps for angle and r
-    r_mini_steps = 20
-    r_steps = 4*r_mini_steps
-    angle_steps = 80
+    x,y,z = np.mgrid[upper:lower:step, upper:lower*cutaway:step, upper:lower:step]
 
-    #Array of angle values
-    ang = np.linspace(-np.pi/2, np.pi, num = angle_steps)
+    r = np.sqrt(x**2 + y**2 + z**2)
 
-    # Get bounds of r for each lobe of orbital
-    orb_r_bounds, num_lobes = r_domain(orbital_input)
+    rho = 2*r/n
 
-    data = []
+    rad = radial_s(n, 2*r/n)
 
-    flag = True
+    ang = 0.5/np.sqrt(np.pi)
 
-    #Calculate coordinates of isosurface
-    # loop over each lobe of the orbital
-    
-    num_shells = n
+    wav = ang*rad
 
-    for shell in np.arange(num_shells):
-
-        low_bound = orb_r_bounds[shell,0]
-
-        gap = np.abs(orb_r_bounds[shell,0] - orb_r_bounds[shell,1])
-
-        x, y, z = calc_s_orb(n, c, orbital_input, gap, ang, orb_r_bounds, num_lobes, angle_steps, r_steps, r_mini_steps, low_bound)
-
-        fig.add_trace(go.Surface(x=x, y=y, z=z[0,:,:], colorscale= colours, showscale=False), 1, 1)
-        fig.add_trace(go.Surface(x=x, y=y, z=z[1,:,:], colorscale= colours, showscale=False), 1, 1)
-
-
-    return fig
-
-def calc_s_orb(n, c, orbital_input, gap, ang, orb_r_bounds, num_lobes, angle_steps, r_steps, r_mini_steps, low_bound):
-
-    #Arrays for x,y,z coordinates
-    # z has two separate arrays as a p orbital has two halves separated by a plane
-    x = np.zeros([angle_steps, r_steps])
-    y = np.zeros([angle_steps, r_steps])
-    x_y_no_angle = np.zeros([r_steps])
-    z = np.zeros([num_lobes, angle_steps, r_steps])
-
-    #Array of r values for each lobe
-    # Sample more frequently closer to the pole of the lobe
-    r = np.linspace(low_bound, low_bound + gap*0.025, r_mini_steps)
-    r = np.append(r,np.linspace(low_bound+ gap*0.025, low_bound + gap*0.5, r_mini_steps))
-    r = np.append(r,np.linspace(low_bound+ gap*0.5, low_bound + gap*0.975, r_mini_steps))
-    r = np.append(r,np.linspace(low_bound+ gap*0.975, low_bound + gap, r_mini_steps))
-
-    #Calculate z(r)
-    z_of_r = r
-
-    #Calculate angle independent term of x and y
-    x_y_no_angle = np.sqrt(r**2. - z_of_r**2.)
-
-    #Calculate x and y by multiplying by angular factor
-    #And set z coordinate for every angle and r value
-    for r_it in np.arange(r_steps):
-        for ang_it in np.arange(angle_steps):
-            x[ang_it,r_it]   = z_of_r[r_it]*np.cos(ang[ang_it])
-            y[ang_it,r_it]   = z_of_r[r_it]*np.sin(ang[ang_it])
-            z[0,ang_it,r_it] = z_of_r[r_it]
-            z[1,ang_it,r_it] = -z_of_r[r_it]
-
-    return x, y, z
+    if n == 1:
+        ival=0.0005
+    if n == 2:
+        ival=0.0005
+    if n == 3:
+        ival=0.0005
+    elif n == 4:
+        ival = 0.0005
+    elif n == 5:
+        ival =0.0005
+    elif n == 6:
+        ival =0.0005
 
 
-def plot_p_orb(n, orbital_input,  colours, fig, cutaway):
+    fig.add_trace(go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=wav.flatten(),
+        isomin=-ival,
+        isomax=ival,
+        caps=dict(x_show=False, y_show=False, z_show=False),
+        showscale=False,
+        colorscale=colours
+        ))
+    return fig, upper, lower
+
+def plot_p_orb(n, orbital_input, colours, fig, cutaway):
 
     # Set contour level
     if n < 5:
@@ -376,11 +399,7 @@ def plot_p_orb(n, orbital_input,  colours, fig, cutaway):
     fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
 
     return fig, -orb_r_bounds[-1,1], orb_r_bounds[-1,1]
-
-def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, 
-               r_steps, r_mini_steps):
-
-    print(bounds, flush=True)
+def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps, r_mini_steps):
 
     gap = np.abs(bounds[1] - bounds[0])
 
@@ -393,7 +412,7 @@ def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps,
 
     angm, rm = np.meshgrid(ang, r)
 
-    zor = p_z_ax(n,rm,radial_p(orbital_input,rm),c)
+    zor = p_z_ax(n,rm,radial_p(n, rm),c)
 
     x = np.sqrt(rm**2. - zor**2.)*np.cos(angm)
     y = np.sqrt(rm**2. - zor**2.)*np.sin(angm)
@@ -408,17 +427,17 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
         lower = -40
         step  = 60j
     elif n == 4:
-        upper = 47
-        lower = -47
-        step  = 60j
+        upper = 70
+        lower = -70
+        step  = 70j
     elif n == 5:
-        upper = 74
-        lower = -74
-        step  = 60j
-    elif n ==6:
-        upper = 105
-        lower = -105
+        upper = 98
+        lower = -98
         step  = 80j
+    elif n ==6:
+        upper = 135
+        lower = -135
+        step  = 90j
 
     x,y,z = np.mgrid[upper:lower:step, upper:lower*cutaway:step, upper:lower:step]
 
@@ -426,32 +445,20 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
 
     rho = 2*r/n
 
-    if n == 3:
-        rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
-    elif n == 4:
-        rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
-    elif n == 5:
-        rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
-    elif n == 6:
-        rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
+    rad = radial_d(n, 2*r/n)
 
     ang = 2*z**2-x**2-y**2
 
-    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
-
-    print(np.shape(x), flush=True)
+    wav = rad*ang
 
     if n == 3:
-        ival=0.005
+        ival=0.08
     elif n == 4:
-        ival = 0.02
+        ival = 0.08
     elif n == 5:
-        ival = 0.01
+        ival = 0.08
     elif n == 6:
-        ival = 0.01
-
-    print(ival, flush=True)
-
+        ival = 0.08
 
     fig.add_trace(go.Isosurface(
         x=x.flatten(),
@@ -470,40 +477,31 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
 def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
 
     if n == 3:
-        upper = 30
-        lower = -30
-        step  = 60j
+        upper =  45
+        lower = -45
+        step  =  60j
     elif n == 4:
-        upper = 42
-        lower = -42
-        step  = 60j
+        upper =  70
+        lower = -70
+        step  =  70j
     elif n == 5:
-        upper = 60
-        lower = -60
-        step  = 60j
+        upper =  98
+        lower = -98
+        step  =  80j
     elif n ==6:
-        upper = 77
-        lower = -77
-        step  = 60j
+        upper =  135
+        lower = -135
+        step  =  90j
 
     x,y,z = np.mgrid[upper:lower:step, upper:lower:step, upper:lower*cutaway:step]
 
     r = np.sqrt(x**2 + y**2 + z**2)
 
-    rho = 2*r/n
-
-    if n == 3:
-        rad = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.)
-    elif n == 4:
-        rad = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.)
-    elif n == 5:
-        rad = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.)
-    elif n == 6:
-        rad = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.)
+    rad = radial_d(n, 2*r/n)
 
     ang = x*y
 
-    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
+    wav = rad*ang
 
     if n == 3:
         ival=0.005
@@ -530,34 +528,27 @@ def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
 def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
 
     if n == 4:
-        upper = 45
-        lower = -45
-        step  = 60j
-    elif n == 5:
         upper = 70
         lower = -70
         step  = 60j
+    elif n == 5:
+        upper = 100
+        lower = -100
+        step  = 75j
     elif n ==6:
-        upper = 90
-        lower = -90
-        step  = 70j
+        upper = 130
+        lower = -130
+        step  = 85j
 
     x,y,z = np.mgrid[upper:lower*cutaway:step, upper:lower:step, upper:lower:step]
 
     r = np.sqrt(x**2 + y**2 + z**2)
 
-    rho = 2*r/n
-
-    if n == 4:
-        rad = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.)
-    elif n == 5:
-        rad = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.)
-    elif n == 6:
-        rad = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.)
+    rad = radial_f(n, 2*r/n)
 
     ang = 6./16. * np.sqrt(1/np.pi) * (35.*z**4 - 30.*z**2*r**2 + 3.*r**4)/(r**4)
 
-    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
+    wav = rad*ang
 
     if n == 4:
         ival = 0.000005
@@ -582,34 +573,27 @@ def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
 def plot_fxy_orb(n, orbital_input, colours, fig, cutaway):
 
     if n == 4:
-        upper = 45
-        lower = -45
+        upper = 60
+        lower = -60
         step  = 60j
     elif n == 5:
-        upper = 70
-        lower = -70
-        step  = 60j
-    elif n ==6:
         upper = 90
         lower = -90
         step  = 70j
+    elif n ==6:
+        upper = 115
+        lower = -115
+        step  = 80j
 
     x,y,z = np.mgrid[upper:lower*cutaway:step, upper:lower:step, upper:lower:step]
 
     r = np.sqrt(x**2 + y**2 + z**2)
 
-    rho = 2*r/n
-
-    if n == 4:
-        rad = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.)
-    elif n == 5:
-        rad = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.)
-    elif n == 6:
-        rad = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.)
+    rad = radial_f(n, 2*r/n)
 
     ang = 3./4. * np.sqrt(35./(2*np.pi)) * (3*x**2 - y**2)*y*z/(r**4)
 
-    wav = rad*np.sqrt(1/(4*np.pi)*np.sqrt(10)/r**2)*ang
+    wav = rad*ang
 
     print('should be calculating here...', flush=True)
 
@@ -907,7 +891,7 @@ orbital_plot_options = [html.Div(className = "container",
                                                          {'label': '5f', 'value': '5f'},
                                                          {'label': '6f', 'value': '6f'},
                                                         ],
-                                                 value=['3d'],
+                                                 value=['2p'],
                                                 labelStyle={
                                                             'maxwidth' : '20px',
                                                             'display': 'inline-block'
@@ -936,31 +920,29 @@ orbital_plot_options = [html.Div(className = "container",
                                  'grid-row-start': '2',
                                  'grid-row-end': '3'},
                         children=[
-                                  dcc.RadioItems(id = 'FuncType', 
-                                                 style = {
-                                                          'textAlign' : 'center',
-                                                          'fontFamily' : 'sans-serif',
-                                                          'display': 'block'
-                                                         },
-                                                 options=[
-                                                          {
-                                                           'label': 'Radial Distribution Function',
-                                                           'value': 'RDF'
-                                                          },
-                                                          {
-                                                           'label': 'Radial Wave Function',
-                                                           'value': 'RWF'
-                                                          },
-                                                          {
-                                                           'label': '3D', 
-                                                           'value': '3DWF'
-                                                          }
-                                                         ],
-                                                 value='RDF',
-                                                 labelStyle={
-                                                             'float':'left'
-                                                             }
-                                                 )
+                                  dcc.Dropdown(id = 'FuncType', 
+                                  style = {
+                                           'textAlign' : 'center',
+                                           'fontFamily' : 'sans-serif',
+                                           'display': 'block'
+                                          },
+                                  options=[
+                                           {
+                                            'label': 'Radial Distribution Function',
+                                            'value': 'RDF'
+                                           },
+                                           {
+                                            'label': 'Radial Wave Function',
+                                            'value': 'RWF'
+                                           },
+                                           {
+                                            'label': '3D Surface', 
+                                            'value': '3DWF'
+                                           }
+                                          ],
+                                  value='3DWF',
+                                  searchable=False,
+                                  )
                                  ]
                             )
                   ]
@@ -1671,6 +1653,12 @@ def orb_checklist(dimension):
 
     elif dimension == '3d':
         return[
+               {'label': '1s', 'value': '1s'},
+               {'label': '2s', 'value': '2s'},
+               {'label': '3s', 'value': '3s'},
+               {'label': '4s', 'value': '4s'},
+               {'label': '5s', 'value': '5s'},
+               {'label': '6s', 'value': '6s'},
                {'label': '2p', 'value': '2p'},
                {'label': '3p', 'value': '3p'},
                {'label': '4p', 'value': '4p'},
