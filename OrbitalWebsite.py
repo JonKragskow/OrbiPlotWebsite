@@ -260,9 +260,14 @@ def OrbCalc(orbital_input, colour_name, fig, cutaway):
 
     elif l == 'f':
 
-        if 'xy' in orbital_input:
+        if 'xyz' in orbital_input:
 
-            fig, upper, lower = plot_fxy_orb(n, orbital_input,colours, fig, cutaway)
+            fig, upper, lower = plot_fxyz_orb(n, orbital_input,colours, fig, cutaway)
+
+
+        elif 'yz2' in orbital_input:
+
+        	fig, upper, lower = plot_fyz2_orb(n, orbital_input,colours, fig, cutaway)
 
         else:
 
@@ -570,7 +575,7 @@ def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
         ))
     return fig, upper, lower
 
-def plot_fxy_orb(n, orbital_input, colours, fig, cutaway):
+def plot_fxyz_orb(n, orbital_input, colours, fig, cutaway):
 
     if n == 4:
         upper = 60
@@ -591,13 +596,9 @@ def plot_fxy_orb(n, orbital_input, colours, fig, cutaway):
 
     rad = radial_f(n, 2*r/n)
 
-    ang = 3./4. * np.sqrt(35./(2*np.pi)) * (3*x**2 - y**2)*y*z/(r**4)
+    ang = 0.5* np.sqrt(105/np.pi) * x*y*z/(r**3)
 
     wav = rad*ang
-
-    print('should be calculating here...', flush=True)
-
-    print(n, flush=True)
 
     if n == 4:
         ival = 0.000005
@@ -618,6 +619,52 @@ def plot_fxy_orb(n, orbital_input, colours, fig, cutaway):
         colorscale=colours
         ))
     return fig, upper, lower
+
+def plot_fyz2_orb(n, orbital_input, colours, fig, cutaway):
+
+    if n == 4:
+        upper = 65
+        lower = -65
+        step  = 60j
+    elif n == 5:
+        upper = 90
+        lower = -90
+        step  = 70j
+    elif n ==6:
+        upper = 120
+        lower = -120
+        step  = 80j
+
+    x,y,z = np.mgrid[upper:lower*cutaway:step, upper:lower:step, upper:lower:step]
+
+    r = np.sqrt(x**2 + y**2 + z**2)
+
+    rad = radial_f(n, 2*r/n)
+
+    ang = 0.25* np.sqrt(35/(2*np.pi)) * (3*x**2-y**2)*y/r**3
+
+    wav = rad*ang
+
+    if n == 4:
+        ival = 0.000005
+    elif n == 5:
+        ival = 0.000005
+    elif n == 6:
+        ival = 0.000005
+  
+    fig.add_trace(go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=wav.flatten(),
+        isomin=-ival,
+        isomax=ival,
+        caps=dict(x_show=False, y_show=False, z_show=False),
+        showscale=False,
+        colorscale=colours
+        ))
+    return fig, upper, lower
+
 
 
 def swap(colour_1, colour_2):
@@ -1678,7 +1725,9 @@ def orb_checklist(dimension):
                {'label': '4fxyz', 'value': '4fxyz'},
                {'label': '5fxyz', 'value': '5fxyz'},
                {'label': '6fxyz', 'value': '6fxyz'},
-
+               {'label': '4fyz²', 'value': '4fyz2'},
+               {'label': '5fyz²', 'value': '5fyz2'},
+               {'label': '6fyz²', 'value': '6fyz2'},
               ]
 ##################################################################################################################################
 ########################################################### Callbacks ############################################################
