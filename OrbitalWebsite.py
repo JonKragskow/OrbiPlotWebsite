@@ -987,7 +987,7 @@ orbital_plot_options = [html.Div(className = "container",
                                             'value': '3DWF'
                                            }
                                           ],
-                                  value='3DWF',
+                                  value='RDF',
                                   searchable=False,
                                   )
                                  ]
