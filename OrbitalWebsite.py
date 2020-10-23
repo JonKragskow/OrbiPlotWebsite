@@ -48,7 +48,32 @@ def radial_s(n, rho):
 
     return rad
 
-def radial_p(n, r):
+def radial_p(n, rho):
+    """
+    Calculates radial Wavefunction of p orbital
+    for the specified principal quantum number
+
+    Input:
+        n (int)  ::  principal quantum number
+        rho (numpy float array) :: 2.*r/n, where r^2 = x^2+y^2+z^2
+
+    Returns:
+        rad (numpy float array) :: radial wavefunction
+    """
+
+    if n == 2:
+        rad = 1./(2.*np.sqrt(6.))*rho*np.exp(-rho/2.)
+    elif n == 3:
+        rad = 1./(9.*np.sqrt(6.))*rho*(4.-rho)*np.exp(-rho/2.)
+    elif n == 4:
+        rad = 1./(32.*np.sqrt(15.))*rho*(20.-10.*rho+rho**2.)*np.exp(-rho/2.)
+    elif n == 5:
+        rad = 1./(150.*np.sqrt(30.))*rho*(120.-90.*rho+18.*rho**2.-rho**3.)*np.exp(-rho/2.)
+    elif n == 6:
+        rad = 1./(432.*np.sqrt(210.))*rho*(840.-840.*rho+252.*rho**2.-28.*rho**3.+rho**4.)*np.exp(-rho/2.)
+    return rad
+
+def radial_p_mod(n, r):
     """
     Calculates radial Wavefunction of p orbital
     for the specified principal quantum number
@@ -230,7 +255,7 @@ def get_orb_name(orb):
 
     return n,l
 
-def OrbCalc(orbital_input, colour_name, fig, cutaway):
+def orbitals_3d(orbital_input, colour_name, fig, cutaway):
 
     # Get colours of lobes
     colours = set_3d_colour(colour_name)
@@ -417,7 +442,7 @@ def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps
 
     angm, rm = np.meshgrid(ang, r)
 
-    zor = p_z_ax(n,rm,radial_p(n, rm),c)
+    zor = p_z_ax(n,rm,radial_p_mod(n, rm),c)
 
     x = np.sqrt(rm**2. - zor**2.)*np.cos(angm)
     y = np.sqrt(rm**2. - zor**2.)*np.sin(angm)
@@ -665,178 +690,33 @@ def plot_fyz2_orb(n, orbital_input, colours, fig, cutaway):
         ))
     return fig, upper, lower
 
-
-
 def swap(colour_1, colour_2):
 
     return colour_2, colour_1
 
-###Functions for Radial Wave Functions and probability density functions
-
-def s_1(r,mode, zeff):
-    rho = np.copy(2.*r/1.  * zeff)
-    O1s = 2.*np.exp(-rho/2.) * zeff**1.5
+def plot_radial_s(n, r, mode):
     if mode==1:
-        return r**2.*O1s**2.
+        return r**2.* radial_s(n, 2.*r/n)**2
     if mode==2:
-        return O1s
+        return radial_s(n, 2.*r/n)
 
-def s_2(r,mode, zeff):
-    rho = np.copy(2.*r/2. * zeff)
-    O2s = 1./(2.*np.sqrt(2.))*(2.-rho)*np.exp(-rho/2.) * zeff**1.5
+def plot_radial_p(n, r, mode):    
     if mode==1:
-        return r**2.*O2s**2.
+        return r**2.* radial_p(n, 2.*r/n)**2
     if mode==2:
-        return O2s
+        return radial_p(n, 2.*r/n)
 
-def s_3(r,mode, zeff):
-    rho = np.copy(2.*r/3. * zeff)
-    O3s = 1./(9.*np.sqrt(3.))*(6.-6.*rho+rho**2.)*np.exp(-rho/2.) * zeff**1.5
+def plot_radial_d(n, r, mode):
     if mode==1:
-        return r**2.*O3s**2.
+        return r**2.* radial_d(n, 2.*r/n)**2
     if mode==2:
-        return O3s
+        return radial_d(n, 2.*r/n)
 
-def s_4(r,mode, zeff):
-    rho = np.copy(2.*r/4. * zeff)
-    O4s = (1./96.)*(24.-36.*rho+12.*rho**2.-rho**3.)*np.exp(-rho/2.) * zeff**1.5
+def plot_radial_f(n, r, mode):
     if mode==1:
-        return r**2.*O4s**2.
+        return r**2.* radial_f(n, 2.*r/n)**2
     if mode==2:
-        return O4s
-
-def s_5(r,mode, zeff):
-    rho = np.copy(2.*r/5. * zeff)
-    O5s = (1./(300.*np.sqrt(5.)))*(120.-240.*rho+120.*rho**2.-20.*rho**3.+rho**4.)*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O5s**2.
-    if mode==2:
-        return O5s
-
-def s_6(r,mode, zeff):
-    rho = np.copy(2.*r/6. * zeff)
-    O6s = (1./(2160.*np.sqrt(6.)))*(720.-1800.*rho+1200.*rho**2.-300.*rho**3.+30.*rho**4.-rho**5.)*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O6s**2.
-    if mode==2:
-        return O6s
-
-def p_2(r,mode, zeff):
-    rho = np.copy(2.*r/2. * zeff)
-    O2p = 1./(2.*np.sqrt(6.))*rho*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O2p**2.
-    if mode==2:
-        return O2p
-
-def p_3(r,mode, zeff):
-    rho = np.copy(2.*r/3. * zeff)
-    O3p = 1./(9.*np.sqrt(6.))*rho*(4.-rho)*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O3p**2.
-    if mode==2:
-        return O3p
-
-def p_4(r,mode, zeff):
-    rho = np.copy(2.*r/4. * zeff)
-    O4p = 1./(32.*np.sqrt(15.))*rho*(20.-10.*rho+rho**2.)*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O4p**2.
-    if mode==2:
-        return O4p
-
-def p_5(r,mode, zeff):
-    rho = np.copy(2.*r/5. * zeff)
-    O5p = 1./(150.*np.sqrt(30.))*rho*(120.-90.*rho+18.*rho**2.-rho**3.)*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O5p**2.
-    if mode==2:
-        return O5p
-
-def p_6(r,mode, zeff):
-    rho = np.copy(2.*r/6. * zeff)
-    O6p = 1./(432.*np.sqrt(210.))*rho*(840.-840.*rho+252.*rho**2.-28.*rho**3.+rho**4.)*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O6p**2.
-    if mode==2:
-        return O6p
-
-def d_3(r,mode, zeff):
-    rho =np.copy(2.*r/3. * zeff)
-    O3d = 1./(9.*np.sqrt(30.))*rho**2.*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O3d**2.
-    if mode==2:
-        return O3d
-
-def d_4(r,mode, zeff):
-    rho = np.copy(2.*r/4. * zeff)
-    O4d = 1./(96.*np.sqrt(5.))*(6.-rho)*rho**2.*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O4d**2.
-    if mode==2:
-        return O4d
-
-def d_5(r,mode, zeff):
-    rho = np.copy(2.*r/5. * zeff)
-    O5d = 1./(150.*np.sqrt(70.))*(42.-14.*rho+rho**2)*rho**2.*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O5d**2.
-    if mode==2:
-        return O5d
-
-def d_6(r,mode, zeff):
-    rho = np.copy(2.*r/6. * zeff)
-    O6d = 1./(864.*np.sqrt(105.))*(336.-168.*rho+24.*rho**2.-rho**3.)*rho**2.*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O6d**2.
-    if mode==2:
-        return O6d
-
-def f_4(r,mode, zeff):
-    rho = np.copy(2.*r/4. * zeff)
-    O4f = 1./(96.*np.sqrt(35.))*rho**3.*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O4f**2.
-    if mode==2:
-        return O4f
-
-def f_5(r,mode, zeff):
-    rho = np.copy(2.*r/5. * zeff)
-    O5f = 1./(300.*np.sqrt(70.))*(8.-rho)*rho**3.*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O5f**2.
-    if mode==2:
-        return O5f
-
-def f_6(r,mode, zeff):
-    rho = np.copy(2.*r/5. * zeff)
-    O6f = 1./(2592.*np.sqrt(35.))*(rho**2.-18.*rho+72.)*rho**3.*np.exp(-rho/2.) * zeff**1.5
-    if mode==1:
-        return r**2.*O6f**2.
-    if mode==2:
-        return O6f
-
-
-functiondict = {'1s': s_1,
-                '2s': s_2, 
-                '3s': s_3, 
-                '4s': s_4, 
-                '5s': s_5, 
-                '6s': s_6, 
-                '2p': p_2,
-                '3p': p_3,
-                '4p': p_4,
-                '5p': p_5,
-                '6p': p_6, 
-                '3d': d_3, 
-                '4d': d_4, 
-                '5d': d_5, 
-                '6d': d_6, 
-                '4f': f_4, 
-                '5f': f_5, 
-                '6f': f_6}
-
+        return radial_f(n, 2.*r/n)
 
 ##################################################################################################################################
 ############################################################ Webpage layout ######################################################
@@ -1783,7 +1663,7 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
     # Plot radial wavefunction or radial distribution function
     if WFFlag == 2 or WFFlag == 1:
         return {
-                'data': get_2d_plots(Orbitals, max(lowerxlim,0), max(upperxlim,0), WFFlag, Thickness),
+                'data': radial_2d(Orbitals, max(lowerxlim,0), max(upperxlim,0), WFFlag, Thickness),
                 'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName, lowerxlim, upperxlim)
                 }, modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name), toggle_pob('on'), toggle_pob('off'), orb_checklist('2d')
 
@@ -1796,7 +1676,7 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
                                 specs=[[{'is_3d': True}]]
                                )
 
-            fig, upper, lower = OrbCalc(Orbitals[0], colour_name_3d, fig, np.float64(cutaway))
+            fig, upper, lower = orbitals_3d(Orbitals[0], colour_name_3d, fig, np.float64(cutaway))
 
             fig.update_layout(ax_config_3d(upper, lower))
 
@@ -1808,19 +1688,39 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
                     }, modebar_config(PlotFormat, PlotHeight, PlotWidth, ' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
 
 
-def get_2d_plots(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
+def radial_2d(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
 
-    # Calculate plot for each orbital and add to list
     traces = []
+    if len(Orbitals) == 0: return
+
     curr_ymax = 0.
-    if len(Orbitals) > 0:
-        for n in range(0,len(Orbitals)):
-            traces.append(go.Scatter(x = np.linspace(lowerxlim,upperxlim,1000), 
-                                     y = functiondict[Orbitals[n]](np.linspace(lowerxlim,upperxlim,1000), WFFlag, 1.),
-                                     line = dict(width = Thickness),
-                                     name = Orbitals[n], 
-                                     hoverinfo = 'none')
-                                    )
+    x = np.linspace(lowerxlim,upperxlim,1000)
+
+    # Plot each requested function
+    for it in range(0,len(Orbitals)):
+        # Get orbital n value and name
+        n, l = get_orb_name(Orbitals[it])
+
+        if l == 's':
+            y = plot_radial_s(n, x, WFFlag)
+
+        elif l == 'p':
+            y = plot_radial_p(n, x, WFFlag)
+
+        elif l == 'd':  
+            y = plot_radial_d(n, x, WFFlag)
+
+        elif l == 'f':
+            y = plot_radial_f(n, x, WFFlag)
+
+        traces.append(go.Scatter(
+                      x = x,
+                      y = y,
+                      line = dict(width = Thickness),
+                      name = Orbitals[it], 
+                      hoverinfo = 'none')
+                      )
+
     return traces
 
 
