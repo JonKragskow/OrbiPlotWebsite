@@ -12,7 +12,6 @@ import dash_defer_js_import as dji
 from scipy.special import sph_harm
 from plotly.subplots import make_subplots
 
-
 ####################################################################################################
 ####################################### Radial Functions ###########################################
 ####################################################################################################
@@ -80,7 +79,7 @@ def radial_p_mod(n, r):
 
     Input:
         n (int)  ::  principal quantum number
-        rho (numpy float array) :: 2.*r/n, where r^2 = x^2+y^2+z^2
+        r (numpy float array) :: r^2 = x^2+y^2+z^2
 
     Returns:
         rad (numpy float array) :: radial wavefunction
@@ -147,11 +146,11 @@ def radial_f(n,rho):
 ########################################## Lobe bounds #############################################
 ####################################################################################################
 
-def r_domain(Orb):
-    # !!! Returns an array containing the bounds of r for each lobe of the requested orbital
+def p_domain(n):
+    # !!! Returns an array containing the bounds of r for each lobe of the requested p orbital
 
     #####2p orbital#####
-    if Orb == '2p':
+    if n == 2:
         num_lobes = 2
         lobe_1_lower = 0.030542415534
         lobe_1_upper = 11.973154175074
@@ -159,7 +158,7 @@ def r_domain(Orb):
         lobe_domains = np.array([[lobe_1_lower, lobe_1_upper]])
 
     #####3p orbital#####
-    if Orb == '3p':
+    if n == 3:
         num_lobes = 4
         lobe_1_lower = 0.0521008719026 
         lobe_1_upper =  5.6457958052515
@@ -171,7 +170,7 @@ def r_domain(Orb):
     
     #####4p orbital#####
 
-    if Orb=='4p':
+    if n == 4:
         num_lobes = 6
 
         lobe_1_lower = 0.0791782710855
@@ -187,7 +186,7 @@ def r_domain(Orb):
     
     #####5p orbital#####
 
-    if Orb=='5p':
+    if n == 5:
         num_lobes = 8
     
         lobe_1_lower = 0.0105650461441 
@@ -206,7 +205,7 @@ def r_domain(Orb):
     
     #####6p orbital#####
     
-    if Orb=='6p':
+    if n == 6:
         num_lobes = 10
 
         lobe_1_lower = 0.0138230698659
@@ -249,59 +248,92 @@ def set_3d_colour(colour_name):
     return colours
 
 def get_orb_name(orb):
+    """
+    Separates string containing orbital name into n and l quantum numbers
 
+    Input:
+        orb (string) :: name of orbital
+    Returns:
+        n (integer)  :: principal quantum number
+        l (integer)  :: azimuthal quantum number
+    """
     n = int(orb[0])
     l = orb[1]
 
     return n,l
 
-def orbitals_3d(orbital_input, colour_name, fig, cutaway):
+def orbitals_3d(orb_name, colour_name, fig, cutaway):
+    """
+    Plots isosurfaces of atomic orbitals
+
+    Input:
+        orb_name (string)       :: name of orbital
+        colour_name (string)    :: name of colour palette
+        fig (plotly fig object) :: plotly fig object
+        cutaway (float)         :: % of orbital to keep/plot
+    Returns:
+        fig (plotly fig object) :: plotly fig object with new graph added
+        upper (float)           :: upper bound of all axis limits 
+        lower (float)           :: lower bound of all axis limits 
+    """
 
     # Get colours of lobes
     colours = set_3d_colour(colour_name)
     
     # Get orbital n value and name
-    n, l = get_orb_name(orbital_input)
+    n, l = get_orb_name(orb_name)
 
     if l == 's':
 
-        fig, upper, lower = plot_s_orb(n, orbital_input, colours, fig, cutaway)
+        x, y, z, wav, upper, lower, ival = plot_s_orb(n, cutaway)
 
     elif l == 'p':
 
-        fig, upper, lower = plot_p_orb(n, orbital_input, colours, fig, cutaway)
+        fig, upper, lower= plot_p_orb(n, cutaway, colours, fig)
 
     elif l == 'd':  
 
-        print(orbital_input, orbital_input.find('xy'), flush=True)
+        if 'xy' in orb_name:
 
-        if 'xy' in orbital_input:
-
-            fig, upper, lower = plot_dxy_orb(n, orbital_input,colours, fig, cutaway)
+            x, y, z, wav, upper, lower, ival = plot_dxy_orb(n, cutaway)
 
         else:
 
-            fig, upper, lower = plot_dz_orb(n, orbital_input,colours, fig, cutaway)
+            x, y, z, wav, upper, lower, ival = plot_dz_orb(n, cutaway)
 
     elif l == 'f':
 
-        if 'xyz' in orbital_input:
+        if 'xyz' in orb_name:
 
-            fig, upper, lower = plot_fxyz_orb(n, orbital_input,colours, fig, cutaway)
+            x, y, z, wav, upper, lower, ival = plot_fxyz_orb(n, cutaway)
 
 
-        elif 'yz2' in orbital_input:
+        elif 'yz2' in orb_name:
 
-        	fig, upper, lower = plot_fyz2_orb(n, orbital_input,colours, fig, cutaway)
+        	x, y, z, wav, upper, lower, ival = plot_fyz2_orb(n, cutaway)
 
         else:
 
-            fig, upper, lower = plot_fz_orb(n, orbital_input,colours, fig, cutaway)
+            x, y, z, wav, upper, lower, ival = plot_fz_orb(n, cutaway)
 
+    if l != "p":
+
+        fig.add_trace(go.Isosurface(
+            x=x.flatten(),
+            y=y.flatten(),
+            z=z.flatten(),
+            value=wav.flatten(),
+            isomin=-ival,
+            isomax=ival,
+            flatshading=False,
+            caps=dict(x_show=False, y_show=False, z_show=False),
+            showscale=False,
+            colorscale=colours
+            ))
 
     return fig, upper, lower
 
-def plot_s_orb(n, orbital_input, colours, fig, cutaway):
+def plot_s_orb(n, cutaway):
 
     if n == 1:
         upper =  10
@@ -316,17 +348,17 @@ def plot_s_orb(n, orbital_input, colours, fig, cutaway):
         lower = -30
         step  =  50j
     elif n == 4:
-        upper =  30
-        lower = -30
+        upper =  45
+        lower = -45
         step  =  50j
     elif n == 5:
-        upper =  30
-        lower = -30
-        step  =  50j
+        upper =  58
+        lower = -58
+        step  =  60j
     elif n ==6:
         upper =  75
         lower = -75
-        step  =  60j
+        step  =  70j
 
     x,y,z = np.mgrid[upper:lower:step, upper:lower*cutaway:step, upper:lower:step]
 
@@ -353,21 +385,9 @@ def plot_s_orb(n, orbital_input, colours, fig, cutaway):
     elif n == 6:
         ival =0.0005
 
+    return x, y, z, wav, upper, lower, ival
 
-    fig.add_trace(go.Isosurface(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        value=wav.flatten(),
-        isomin=-ival,
-        isomax=ival,
-        caps=dict(x_show=False, y_show=False, z_show=False),
-        showscale=False,
-        colorscale=colours
-        ))
-    return fig, upper, lower
-
-def plot_p_orb(n, orbital_input, colours, fig, cutaway):
+def plot_p_orb(n, cutaway, colours, fig):
 
     # Set contour level
     if n < 5:
@@ -384,7 +404,7 @@ def plot_p_orb(n, orbital_input, colours, fig, cutaway):
     ang = np.linspace(-np.pi * cutaway, np.pi, num = angle_steps)
 
     # Get bounds of r for each lobe of orbital
-    orb_r_bounds, num_lobes = r_domain(orbital_input)
+    orb_r_bounds, num_lobes = p_domain(n)
 
     data = []
 
@@ -398,7 +418,7 @@ def plot_p_orb(n, orbital_input, colours, fig, cutaway):
 
     for shell in np.arange(num_shells):
 
-        xt, yt, zt = calc_p_orb(n, c, orbital_input, orb_r_bounds[shell, :], ang, num_lobes, angle_steps, 
+        xt, yt, zt = calc_p_orb(n, c, orb_r_bounds[shell, :], ang, num_lobes, angle_steps, 
                              r_steps, r_mini_steps)
 
         if sw == 0 :
@@ -429,7 +449,7 @@ def plot_p_orb(n, orbital_input, colours, fig, cutaway):
     fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
 
     return fig, -orb_r_bounds[-1,1], orb_r_bounds[-1,1]
-def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps, r_mini_steps):
+def calc_p_orb(n, c, bounds, ang, num_lobes, angle_steps, r_steps, r_mini_steps):
 
     gap = np.abs(bounds[1] - bounds[0])
 
@@ -450,7 +470,7 @@ def calc_p_orb(n, c, orbital_input, bounds, ang, num_lobes, angle_steps, r_steps
 
     return x, y, z
 
-def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
+def plot_dz_orb(n, cutaway):
 
     if n == 3:
         upper = 40
@@ -490,21 +510,9 @@ def plot_dz_orb(n, orbital_input, colours, fig, cutaway):
     elif n == 6:
         ival = 0.08
 
-    fig.add_trace(go.Isosurface(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        value=wav.flatten(),
-        isomin=-ival,
-        isomax=ival,
-        caps=dict(x_show=False, y_show=False, z_show=False),
-        showscale=False,
-        colorscale=colours
-        ))
-    return fig, upper, lower
+    return x, y, z, wav, upper, lower, ival
 
-
-def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
+def plot_dxy_orb(n, cutaway):
 
     if n == 3:
         upper =  45
@@ -542,20 +550,9 @@ def plot_dxy_orb(n, orbital_input, colours, fig, cutaway):
     elif n == 6:
         ival = 0.01
         
-    fig.add_trace(go.Isosurface(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        value=wav.flatten(),
-        isomin=-ival,
-        isomax=ival,
-        caps=dict(x_show=False, y_show=False, z_show=False),
-        showscale=False,
-        colorscale=colours
-        ))
-    return fig, upper, lower
+    return x, y, z, wav, upper, lower, ival
 
-def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
+def plot_fz_orb(n, cutaway):
 
     if n == 4:
         upper = 70
@@ -587,20 +584,9 @@ def plot_fz_orb(n, orbital_input, colours, fig, cutaway):
     elif n == 6:
         ival = 0.000005
   
-    fig.add_trace(go.Isosurface(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        value=wav.flatten(),
-        isomin=-ival,
-        isomax=ival,
-        caps=dict(x_show=False, y_show=False, z_show=False),
-        showscale=False,
-        colorscale=colours
-        ))
-    return fig, upper, lower
+    return x, y, z, wav, upper, lower, ival
 
-def plot_fxyz_orb(n, orbital_input, colours, fig, cutaway):
+def plot_fxyz_orb(n, cutaway):
 
     if n == 4:
         upper = 60
@@ -632,20 +618,9 @@ def plot_fxyz_orb(n, orbital_input, colours, fig, cutaway):
     elif n == 6:
         ival = 0.000005
   
-    fig.add_trace(go.Isosurface(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        value=wav.flatten(),
-        isomin=-ival,
-        isomax=ival,
-        caps=dict(x_show=False, y_show=False, z_show=False),
-        showscale=False,
-        colorscale=colours
-        ))
-    return fig, upper, lower
+    return x, y, z, wav, upper, lower, ival
 
-def plot_fyz2_orb(n, orbital_input, colours, fig, cutaway):
+def plot_fyz2_orb(n, cutaway):
 
     if n == 4:
         upper = 65
@@ -677,21 +652,9 @@ def plot_fyz2_orb(n, orbital_input, colours, fig, cutaway):
     elif n == 6:
         ival = 0.000005
   
-    fig.add_trace(go.Isosurface(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        value=wav.flatten(),
-        isomin=-ival,
-        isomax=ival,
-        caps=dict(x_show=False, y_show=False, z_show=False),
-        showscale=False,
-        colorscale=colours
-        ))
-    return fig, upper, lower
+    return x, y, z, wav, upper, lower, ival
 
 def swap(colour_1, colour_2):
-
     return colour_2, colour_1
 
 def plot_radial_s(n, r, mode):
@@ -718,9 +681,9 @@ def plot_radial_f(n, r, mode):
     if mode==2:
         return radial_f(n, 2.*r/n)
 
-##################################################################################################################################
-############################################################ Webpage layout ######################################################
-##################################################################################################################################
+##################################################################
+########################## Webpage layout ########################
+##################################################################
 
 #Build the webpage layout
 
@@ -765,771 +728,920 @@ app.index_string = r'''
 </html>
 '''
 
-orbital_plot_options = [html.Div(className = "container", 
-         style = {
-                  'display' : 'grid',
-                  'grid-template-columns': r'50% 50%',
-                  'grid-template-rows' : r'50% 50%'
-                  },
-         children=[
-                    html.Div(className = "item", 
-                        style = {
-                                 'grid-column-start': '1',
-                                 'grid-column-end': '2',
-                                 'grid-row-start': '1',
-                                 'grid-row-end': '2'},
-                        children=[
-                                  html.H2(style = {
-                                                  'textAlign' : 'center', 
-                                                  'fontFamily' : 'sans-serif'
-                                                 },
-                                         children = 'Orbital'),
-                                 ]
-                            ),
-                    html.Div(className = "item", 
-                        style = {
-                                 'grid-column-start': '1',
-                                 'grid-column-end': '2',
-                                 'grid-row-start': '2',
-                                 'grid-row-end': '3'},
-                        children=[
-                                  dcc.Checklist(id = 'OrbCheck', 
-                                                style = {
-                                                         'textAlign' : 'left',
-                                                         'fontFamily' : 'sans-serif'
-                                                        },
-                                                options=[
-                                                         {'label': '1s', 'value': '1s'},
-                                                         {'label': '2s', 'value': '2s'},
-                                                         {'label': '3s', 'value': '3s'},
-                                                         {'label': '4s', 'value': '4s'},
-                                                         {'label': '5s', 'value': '5s'},
-                                                         {'label': '6s', 'value': '6s'},
-                                                         {'label': '2p', 'value': '2p'},
-                                                         {'label': '3p', 'value': '3p'},
-                                                         {'label': '4p', 'value': '4p'},
-                                                         {'label': '5p', 'value': '5p'},
-                                                         {'label': '6p', 'value': '6p'},
-                                                         {'label': '3d', 'value': '3d'},
-                                                         {'label': '4d', 'value': '4d'},
-                                                         {'label': '5d', 'value': '5d'},
-                                                         {'label': '6d', 'value': '6d'},
-                                                         {'label': '4f', 'value': '4f'},
-                                                         {'label': '5f', 'value': '5f'},
-                                                         {'label': '6f', 'value': '6f'},
-                                                        ],
-                                                 value=['2p'],
-                                                labelStyle={
-                                                            'maxwidth' : '20px',
-                                                            'display': 'inline-block'
-                                                           }
-                                               ),
-                                 ]
-                            ),
-                    html.Div(className = "item", 
-                        style = {
-                                 'grid-column-start': '2',
-                                 'grid-column-end': '3',
-                                 'grid-row-start': '1',
-                                 'grid-row-end': '2'},
-                        children=[
-                                  html.H2(style = {
-                                                  'textAlign' : 'center', 
-                                                  'fontFamily' : 'sans-serif'
-                                                 },
-                                         children = 'Function'),
-                                 ]
-                            ),
-                    html.Div(className = "item", 
-                        style = {
-                                 'grid-column-start': '2',
-                                 'grid-column-end': '3',
-                                 'grid-row-start': '2',
-                                 'grid-row-end': '3'},
-                        children=[
-                                  dcc.Dropdown(id = 'FuncType', 
-                                  style = {
-                                           'textAlign' : 'center',
-                                           'fontFamily' : 'sans-serif',
-                                           'display': 'block'
-                                          },
-                                  options=[
-                                           {
-                                            'label': 'Radial Distribution Function',
-                                            'value': 'RDF'
-                                           },
-                                           {
-                                            'label': 'Radial Wave Function',
-                                            'value': 'RWF'
-                                           },
-                                           {
-                                            'label': '3D Surface', 
-                                            'value': '3DWF'
-                                           }
-                                          ],
-                                  value='RDF',
-                                  searchable=False,
-                                  )
-                                 ]
-                            )
-                  ]
-        )]
+orbital_plot_options = [html.Div(
+    className = "container", 
+    style = {
+        'display' : 'grid',
+        'grid-template-columns': r'50% 50%',
+        'grid-template-rows' : r'50% 50%'
+        },
+    children=[
+        html.Div(className = "item", 
+            style = {
+                'grid-column-start': '1',
+                'grid-column-end': '2',
+                'grid-row-start': '1',
+                'grid-row-end': '2'
+            },
+            children=[
+                html.H2(
+                    style = {
+                        'textAlign' : 'center', 
+                        'fontFamily' : 'sans-serif'
+                        },
+                    children = 'Orbital'
+                ),
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '1',
+                'grid-column-end': '2',
+                'grid-row-start': '2',
+                'grid-row-end': '3'},
+            children=[
+                dcc.Checklist(id = 'OrbCheck', 
+                    style = {
+                        'textAlign' : 'left',
+                        'fontFamily' : 'sans-serif'
+                    },
+                    options=[
+                        {'label': '1s', 'value': '1s'},
+                        {'label': '2s', 'value': '2s'},
+                        {'label': '3s', 'value': '3s'},
+                        {'label': '4s', 'value': '4s'},
+                        {'label': '5s', 'value': '5s'},
+                        {'label': '6s', 'value': '6s'},
+                        {'label': '2p', 'value': '2p'},
+                        {'label': '3p', 'value': '3p'},
+                        {'label': '4p', 'value': '4p'},
+                        {'label': '5p', 'value': '5p'},
+                        {'label': '6p', 'value': '6p'},
+                        {'label': '3d', 'value': '3d'},
+                        {'label': '4d', 'value': '4d'},
+                        {'label': '5d', 'value': '5d'},
+                        {'label': '6d', 'value': '6d'},
+                        {'label': '4f', 'value': '4f'},
+                        {'label': '5f', 'value': '5f'},
+                        {'label': '6f', 'value': '6f'},
+                    ],
+                    value=['2p'],
+                    labelStyle={
+                        'maxwidth' : '20px',
+                        'display': 'inline-block'
+                    }
+                ),
+            ]
+        ),
+        html.Div(className = "item", 
+            style = {
+                'grid-column-start': '2',
+                'grid-column-end': '3',
+                'grid-row-start': '1',
+                'grid-row-end': '2'
+            },
+            children=[
+                html.H2(
+                    style = {
+                        'textAlign' : 'center', 
+                        'fontFamily' : 'sans-serif'
+                    },
+                    children = 'Function'
+                ),
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '2',
+                'grid-column-end': '3',
+                'grid-row-start': '2',
+                'grid-row-end': '3'
+            },
+            children=[
+                dcc.Dropdown(
+                    id = 'function_type', 
+                    style = {
+                        'textAlign' : 'center',
+                        'fontFamily' : 'sans-serif',
+                        'display': 'block'
+                    },
+                    options=[
+                        {
+                         'label': 'Radial Distribution Function',
+                         'value': 'RDF'
+                        },
+                        {
+                         'label': 'Radial Wave Function',
+                         'value': 'RWF'
+                        },
+                        {
+                         'label': '3D Surface', 
+                         'value': '3DWF'
+                        }
+                    ],
+                    value='RDF',
+                    searchable=False,
+                    clearable=False
+                )
+            ]
+        )
+    ]
+)]
 
 
 plot_options_2d = [
                 
-            html.H2(style = {
-                             'textAlign' : 'center', 
-                             'fontFamily' : 'sans-serif'
+    html.H2(
+        style = {
+            'textAlign' : 'center', 
+            'fontFamily' : 'sans-serif'
+        },
+        children = 'Plot Options'),
+    html.Div(
+        className = "container", 
+        style = {
+            'display' : 'grid',
+            'grid-template-columns': r'33% 33% 33%',
+            'grid-template-rows' : r'25% 25% 25% 25%'
+        },
+        children=[
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '1',
+                    'grid-column-end': '2',
+                    'grid-row-start': '1',
+                    'grid-row-end': '2'
+                },
+                children=[
+                    html.P(
+                        style = {
+                            'textAlign' : 'center', 
+                            'fontFamily' : 'sans-serif'
+                        },
+                        children = 'Gridlines'
+                    ),
+                ]
+            ),
+        html.Div(className = "item", 
+            style = {
+                'grid-column-start': '2',
+                'grid-column-end': '3',
+                'grid-row-start': '1',
+                'grid-row-end': '2'},
+            children=[
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                        'fontFamily' : 'sans-serif'
+                    },
+                    children = 'Lower x limit'
+                ),
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '3',
+                'grid-column-end': '4',
+                'grid-row-start': '1',
+                'grid-row-end': '2'
+            },
+            children=[
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                        'fontFamily' : 'sans-serif'
+                        },
+                    children = 'Upper x limit'
+                ),
+            ]
+        ),
+        html.Div(
+            className = "container", 
+            style = {
+                'display' : 'grid',
+                'grid-template-columns': r'100%',
+                'grid-template-rows' : r'50% 50%'
+            },
+            children=[
+                html.Div(
+                    className = "item", 
+                    style = {
+                        'grid-column-start': '1',
+                        'grid-column-end': '2',
+                        'grid-row-start': '1',
+                        'grid-row-end': '2'
+                    },
+                    children=[
+                        dcc.Checklist(
+                            id = 'xgridcheck',
+                            style = {
+                                'textAlign' : 'center', 
+                                'fontFamily' : 'sans-serif'
                             },
-                    children = 'Plot Options'),
+                            options=[
+                                {
+                                 'label': ' x-Axis ', 
+                                 'value': 'xgridval'
+                                }
+                            ],
+                            value=[],
+                        )
+                    ]
+                ),
+                html.Div(
+                    className = "item", 
+                    style = {
+                        'grid-column-start': '1',
+                        'grid-column-end': '2',
+                        'grid-row-start': '2',
+                        'grid-row-end': '3'
+                    },
+                    children=[
+                        dcc.Checklist(
+                            id = 'ygridcheck',
+                            style = {
+                                     'textAlign' : 'center', 
+                                     'fontFamily' : 'sans-serif'
+                            },
+                            options=[
+                                     {
+                                      'label': ' y-Axis ', 
+                                      'value': 'ygridval'
+                                     }
+                            ],
+                            value=[],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '2',
+                'grid-column-end': '3',
+                'grid-row-start': '2',
+                'grid-row-end': '3'},
+            children=[
+                dcc.Input(
+                    id = 'lower_x_in',
+                    placeholder = 0,
+                    type = 'number',
+                    min = -10,
+                    max = 100,
+                    value = 0,
+                    style = {
+                        'width':'40%'
+                    }
+                ),
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '3',
+                'grid-column-end': '4',
+                'grid-row-start': '2',
+                'grid-row-end': '3'
+            },
+            children=[
+                dcc.Input(
+                    id = 'upper_x_in',
+                    placeholder = 80,
+                    type='number',
+                    max = 100,
+                    value = 80,
+                    style = {
+                        'width':'40%'
+                    }
+                ),
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '1',
+                'grid-column-end': '2',
+                'grid-row-start': '3',
+                'grid-row-end': '4'
+            },
+            children=[
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                        'fontFamily' : 'sans-serif'
+                    },
+                    children = 'Line Width'
+                )
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '1',
+                'grid-column-end': '2',
+                'grid-row-start': '4',
+                'grid-row-end': '5'
+            },
+            children=[
+                dcc.Slider(
+                    id = 'linewidth_slider',
+                    min=1,
+                    max=10,
+                    step=0.5,
+                    value=5,
+                )
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '2',
+                'grid-column-end': '3',
+                'grid-row-start': '3',
+                'grid-row-end': '4'
+            },
+            children=[
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                        'fontFamily' : 'sans-serif'
+                    },
+                    children = 'Text Size'
+                )
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '2',
+                'grid-column-end': '3',
+                'grid-row-start': '4',
+                'grid-row-end': '5'},
+            children=[
+                dcc.Slider(
+                    id = 'text_size_slider',
+                    min=15,
+                    max=25,
+                    step=0.5,
+                    value=19,
+                    )
+                ]
+                ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '3',
+                'grid-column-end': '4',
+                'grid-row-start': '3',
+                'grid-row-end': '4'},
+            children=[
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                        'fontFamily' : 'sans-serif'
+                    },
+                    children = 'Plot Colours')
+            ]
+        ),
+        html.Div(
+            className = "item", 
+            style = {
+                'grid-column-start': '3',
+                'grid-column-end': '4',
+                'grid-row-start': '4',
+                'grid-row-end': '5',
+                'width' : '50%'
+            },
+            children=[
+                dcc.Dropdown(
+                    id = 'colours_2d',
+                    options=[
+                            { 
+                             'label': 'normal', 
+                             'value': 'normal'
+                            },
+                            {
+                             'label': 'deuteranopia',
+                             'value': 'deut'
+                            },
+                            {
+                             'label': 'protanopia', 
+                             'value': 'prot'
+                            }
+                    ],
+                    style = {
+                             'width' : '150%'
+                    }, 
+                    value='normal',
+                    searchable=False,
+                    clearable=False
+                )
+            ]
+        )
 
-            html.Div(className = "container", 
-                     style = {'display' : 'grid',
-                              'grid-template-columns': r'33% 33% 33%',
-                              'grid-template-rows' : r'25% 25% 25% 25%'},
-                     children=[
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Gridlines'),
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Lower x limit'),
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '3',
-                                             'grid-column-end': '4',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Upper x limit'),
-                                             ]
-                                        ),
-                                html.Div(className = "container", 
-                                    style = {'display' : 'grid',
-                                             'grid-template-columns': r'100%',
-                                             'grid-template-rows' : r'50% 50%'
-                                            },
-                                    children=[
-                                              html.Div(className = "item", 
-                                                       style = {
-                                                                'grid-column-start': '1',
-                                                                'grid-column-end': '2',
-                                                                'grid-row-start': '1',
-                                                                'grid-row-end': '2'
-                                                               },
-                                                       children=[
-                                                                 dcc.Checklist(id = 'xgridcheck',
-                                                                               style = {
-                                                                                        'textAlign' : 'center', 
-                                                                                        'fontFamily' : 'sans-serif'
-                                                                                        },
-                                                                               options=[
-                                                                                        {
-                                                                                         'label': ' x-Axis ', 
-                                                                                         'value': 'xgridval'
-                                                                                        }
-                                                                               ],
-                                                                               value=[],
-                                                                               )
-                                                                ]
-                                                           ),
-                                              html.Div(className = "item", 
-                                                       style = {
-                                                                'grid-column-start': '1',
-                                                                'grid-column-end': '2',
-                                                                'grid-row-start': '2',
-                                                                'grid-row-end': '3'},
-                                                       children=[
-                                                                 dcc.Checklist(id = 'ygridcheck',
-                                                                               style = {
-                                                                                        'textAlign' : 'center', 
-                                                                                        'fontFamily' : 'sans-serif'
-                                                                                        },
-                                                                               options=[
-                                                                                        {
-                                                                                         'label': ' y-Axis ', 
-                                                                                         'value': 'ygridval'
-                                                                                        }
-                                                                               ],
-                                                                               value=[],
-                                                                               )
-                                                                ]
-                                                           )
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '2',
-                                             'grid-row-end': '3'},
-                                    children=[
-                                              dcc.Input(
-                                                  id = 'LowerxInput',
-                                                  placeholder = 0,
-                                                  type = 'number',
-                                                  min = -10,
-                                                  max = 100,
-                                                  value = 0,
-                                                  style = {'width':'40%'}
-                                              ),
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '3',
-                                             'grid-column-end': '4',
-                                             'grid-row-start': '2',
-                                             'grid-row-end': '3'},
-                                    children=[
-                                              dcc.Input(
-                                                  id = 'UpperxInput',
-                                                  placeholder = 80,
-                                                  type='number',
-                                                  max = 100,
-                                                  value = 80,
-                                                  style = {'width':'40%'}
-                                              ),
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '3',
-                                             'grid-row-end': '4'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Line Width')
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '4',
-                                             'grid-row-end': '5'},
-                                    children=[
-                                              dcc.Slider(
-                                                         id = 'LineWidthSlider',
-                                                         min=1,
-                                                         max=10,
-                                                         step=0.5,
-                                                         value=5,
-                                                        )
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '3',
-                                             'grid-row-end': '4'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Text Size')
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '4',
-                                             'grid-row-end': '5'},
-                                    children=[
-                                              dcc.Slider(
-                                                  id = 'TextSizeSlider',
-                                                  min=15,
-                                                  max=25,
-                                                  step=0.5,
-                                                  value=19,
-                                                        )
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '3',
-                                             'grid-column-end': '4',
-                                             'grid-row-start': '3',
-                                             'grid-row-end': '4'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Plot Colours')
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '3',
-                                             'grid-column-end': '4',
-                                             'grid-row-start': '4',
-                                             'grid-row-end': '5',
-                                             'justify-self':'center',
-                                             'align-self':'center',
-                                             'padding-right' : '40%'
-                                             },
-                                    children=[
-                                              dcc.Dropdown(
-                                                             id = 'Colours_2d',
-                                                             options=[
-                                                                     { 
-                                                                      'label': 'normal', 
-                                                                      'value': 'normal'
-                                                                     },
-                                                                     {
-                                                                      'label': 'deuteranopia',
-                                                                      'value': 'deut'
-                                                                     },
-                                                                     {
-                                                                      'label': 'protanopia', 
-                                                                      'value': 'prot'
-                                                                     }
-                                                                     ],
-                                                             style = {
-                                                                      'width' : '150%'
-                                                                     }, 
-                                                             value='normal',
-                                                             searchable=False,
-                                                             clearable=False
-                                                            )
-                                             ]
-                                        )
-
-                              ]
-                              )]
+    ]
+)]
 
 
 
 plot_options_3d = [
-                
-            html.H2(style = {
-                             'textAlign' : 'center', 
-                             'fontFamily' : 'sans-serif'
+        
+    html.H2(
+        style = {
+            'textAlign' : 'center', 
+            'fontFamily' : 'sans-serif'
+        },
+        children = 'Plot Options'
+    ),
+
+    html.Div(
+        className = "container", 
+        style = {
+            'display' : 'grid',
+            'grid-template-columns': r'50% 50%',
+            'grid-template-rows' : r'50% 50%',
+            'justify-items' : 'center',
+            'align-items' : 'center'
+        },
+        children=[
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '1',
+                    'grid-column-end': '2',
+                    'grid-row-start': '1',
+                    'grid-row-end': '2'
+                },
+                children=[
+                    html.P(
+                        style = {
+                            'textAlign' : 'center', 
+                            'fontFamily' : 'sans-serif'
+                        },
+                        children = 'Lobe Colours'
+                    )
+                ]    
+            ),
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '2',
+                    'grid-column-end': '3',
+                    'grid-row-start': '1',
+                    'grid-row-end': '2'
+                },
+                children=[
+                    html.P(
+                        style = {
+                            'textAlign' : 'center', 
+                            'fontFamily' : 'sans-serif'
+                        },
+                        children = 'Cutaway'
+                    )
+                ]
+            ),
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '1',
+                    'grid-column-end': '2',
+                    'grid-row-start': '2',
+                    'grid-row-end': '3',
+                    'justify-self': 'stretch'
+                },
+                children=[
+                    dcc.Dropdown(
+                        id = 'colours_3d',
+                        options=[
+                                { 
+                                 'label': 'Yellow-Purple', 
+                                 'value': 'yp'
+                                },
+                                {
+                                 'label': 'Red-Blue',
+                                 'value': 'rb'
+                                },
+                                {
+                                 'label': 'Green-Orange', 
+                                 'value': 'go'
+                                }
+                        ],
+                        style = {}, 
+                        value='yp',
+                        searchable=False,
+                        clearable=False
+                    )
+                ]
+            ),
+            html.Div(className = "item", 
+                style = {
+                    'grid-column-start': '2',
+                    'grid-column-end': '3',
+                    'grid-row-start': '2',
+                    'grid-row-end': '3'
+                },
+                children=[
+                    dcc.RadioItems(id = 'cutaway_in', 
+                        style = {
+                            'textAlign' : 'center',
+                            'fontFamily' : 'sans-serif',
+                            'display': 'block'
+                        },
+                        options=[
+                            {
+                             'label': 'None', 
+                             'value': 1.0
                             },
-                    children = 'Plot Options'),
+                            # {
+                            #  'label': '1/4',
+                            #  'value': 0.5
+                            # },
+                            {
+                             'label': '1/2',
+                             'value': 0.
+                            },
+                        ],
+                        value=1.0,
+                        labelStyle={
+                                    'float':'left'
+                        }
+                    )
+                ]
+            )
 
-            html.Div(className = "container", 
-                     style = {'display' : 'grid',
-                              'grid-template-columns': r'50% 50%',
-                              'grid-template-rows' : r'50% 50%',
-                              'justify-items' : 'center',
-                              'align-items' : 'center'
-                             },
-                     children=[
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Lobe Colours')
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'},
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Cutaway')
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '2',
-                                             'grid-row-end': '3',
-                                             'justify-self': 'stretch'
-                                             },
-                                    children=[
-                                              dcc.Dropdown(
-                                                             id = 'Colours_3d',
-                                                             options=[
-                                                                     { 
-                                                                      'label': 'yellow/purple', 
-                                                                      'value': 'yp'
-                                                                     },
-                                                                     {
-                                                                      'label': 'red/blue',
-                                                                      'value': 'rb'
-                                                                     },
-                                                                     {
-                                                                      'label': 'green/orange', 
-                                                                      'value': 'go'
-                                                                     }
-                                                                     ],
-                                                             style = {
-                                                                     }, 
-                                                             value='yp',
-                                                             searchable=False,
-                                                             clearable=False
-                                                            )
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '2',
-                                             'grid-row-end': '3'},
-                                    children=[
-                                              dcc.RadioItems(id = 'Cutaway', 
-                                                             style = {
-                                                                      'textAlign' : 'center',
-                                                                      'fontFamily' : 'sans-serif',
-                                                                      'display': 'block'
-                                                                     },
-                                                             options=[
-                                                                      {
-                                                                       'label': '0', 
-                                                                       'value': 1.0
-                                                                      },
-                                                                      # {
-                                                                      #  'label': '1/4',
-                                                                      #  'value': 0.5
-                                                                      # },
-                                                                      {
-                                                                       'label': '1/2',
-                                                                       'value': 0.
-                                                                      },
-                                                                     ],
-                                                             value=1.0,
-                                                             labelStyle={
-                                                                         'float':'left'
-                                                                         }
-                                                             )
-                                              ]
-                                        )
-
-                              ]
-                    )]
+        ]
+    )]
 
 plot_save_options = [
 
-            html.H2(style = {
-                             'textAlign' : 'center', 
-                             'fontFamily' : 'sans-serif'
-                            },
-                    children = 'Save Options'
+    html.H2(
+        style = {
+            'textAlign' : 'center', 
+            'fontFamily' : 'sans-serif'
+        },
+        children = 'Save Options'
+    ),
+        
+    html.Div(
+        className = "container", 
+        style = {
+            'display' : 'grid',
+            'grid-template-columns' : r'33% 33% 33%',
+            'grid-template-rows' : r'50% 50%',
+            'justify-items' : 'center',
+            'align-items' : 'center'
+        },
+        children=[
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '1',
+                    'grid-column-end': '2',
+                    'grid-row-start': '1',
+                    'grid-row-end': '2'
+                },
+                children=[
+                    html.P(
+                        style = {
+                            'textAlign' : 'center', 
+                            'fontFamily' : 'sans-serif'
+                        },
+                        children = 'Output Height'
                     ),
-                
-            html.Div(className = "container", 
-                     style = {
-                              'display' : 'grid',
-                              'grid-template-columns': r'33% 33% 33%',
-                              'grid-template-rows' : r'50% 50%',
-                               'justify-items' : 'center',
-                               'align-items' : 'center'
-                              },
-                     children=[
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'
-                                             },
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Output Height'),
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'
-                                             },
-                                    children=[
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Output Width'),
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '1',
-                                             'grid-column-end': '2',
-                                             'grid-row-start': '2',
-                                             'grid-row-end': '3',
-                                             'padding-left': '40%',
-                                             },
-                                    children=[
-                                              dcc.Input(
-                                                  id = 'PlotHeightInput',
-                                                  placeholder=500,
-                                                  type='number',
-                                                  value=500,
-                                                  style = {
-                                                           'width':'35%'
-                                                           }
-                                                        )
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '2',
-                                             'grid-column-end': '3',
-                                             'grid-row-start': '2',
-                                             'grid-row-end': '3',
-                                             'padding-left': '40%',
-                                             },
-                                    children=[
-                                              dcc.Input(
-                                                  id = 'PlotWidthInput',
-                                                  placeholder=700,
-                                                  type='number',
-                                                  value=700,
-                                                  style = {
-                                                           'width':'35%'
-                                                           }
-                                                        )
-                                             ]
-                                        ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '3',
-                                             'grid-column-end': '4',
-                                             'grid-row-start': '2',
-                                             'grid-row-end': '3',
-                                             'justify-self':'center'
-                                             },
-                                    children=[                                 
-                                                dcc.Dropdown(
-                                                             id = 'PlotFormatDropdown',
-                                                             options=[
-                                                                     { 
-                                                                      'label': 'svg', 
-                                                                      'value': 'svg'
-                                                                     },
-                                                                     {
-                                                                      'label': 'png',
-                                                                      'value': 'png'
-                                                                     },
-                                                                     {
-                                                                      'label': 'jpeg', 
-                                                                      'value': 'jpeg'
-                                                                     }
-                                                                     ],
-                                                             style = {
-                                                                      'width' : '130%'
-                                                                     }, 
-                                                             value='png',
-                                                             searchable=False,
-                                                             clearable=False
-                                                            )
-                                              ]
-                                         ),
-                                html.Div(className = "item", 
-                                    style = {
-                                             'grid-column-start': '3',
-                                             'grid-column-end': '4',
-                                             'grid-row-start': '1',
-                                             'grid-row-end': '2'
-                                            },
-                                    children=[                                 
-                                              html.P(style = {
-                                                              'textAlign' : 'center', 
-                                                              'fontFamily' : 'sans-serif'
-                                                             },
-                                                     children = 'Output Format'),
-                                              ]
-                                         )
+                ]
+            ),
+            html.Div(
+                className = "item", 
+                style = {
+                         'grid-column-start': '2',
+                         'grid-column-end': '3',
+                         'grid-row-start': '1',
+                         'grid-row-end': '2'
+                         },
+                children=[
+                    html.P(
+                        style = {
+                            'textAlign' : 'center', 
+                            'fontFamily' : 'sans-serif'
+                            },
+                        children = 'Output Width'
+                    ),
+                ]
+            ),
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '1',
+                    'grid-column-end': '2',
+                    'grid-row-start': '2',
+                    'grid-row-end': '3',
+                    'padding-left': '40%',
+                },
+                children=[
+                    dcc.Input(
+                        id = 'plot_height_in',
+                        placeholder=500,
+                        type='number',
+                        value=500,
+                        style = {
+                            'width':'35%'
+                        }
+                    )
+                ]
+            ),
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '2',
+                    'grid-column-end': '3',
+                    'grid-row-start': '2',
+                    'grid-row-end': '3',
+                    'padding-left': '40%',
+                },
+                children=[
+                    dcc.Input(
+                        id = 'plot_width_in',
+                        placeholder=700,
+                        type='number',
+                        value=700,
+                        style = {
+                            'width':'35%'
+                        }
+                    )
+                ]
+            ),
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '3',
+                    'grid-column-end': '4',
+                    'grid-row-start': '2',
+                    'grid-row-end': '3',
+                    'justify-self':'center'
+                },
+                children=[                                 
+                    dcc.Dropdown(
+                        id = 'save_format',
+                        options=[
+                                { 
+                                 'label': 'svg', 
+                                 'value': 'svg'
+                                },
+                                {
+                                 'label': 'png',
+                                 'value': 'png'
+                                },
+                                {
+                                 'label': 'jpeg', 
+                                 'value': 'jpeg'
+                                }
+                        ],
+                        style = {
+                                 'width' : '130%'
+                        }, 
+                        value='png',
+                        searchable=False,
+                        clearable=False
+                    )
+                ]
+            ),
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '3',
+                    'grid-column-end': '4',
+                    'grid-row-start': '1',
+                    'grid-row-end': '2'
+                },
+                children=[                                 
+                    html.P(
+                        style = {
+                            'textAlign' : 'center', 
+                            'fontFamily' : 'sans-serif'
+                        },
+                        children = 'Output Format'
+                    ),
+                ]
+            )
+        ]
+    )]
 
-                              ]
-                              )]
+orb_tab = [
+
+    html.Div(className = "item", 
+        style = {
+            'grid-column-start': '2',
+            'grid-column-end': '3',
+            'grid-row-start': '1',
+            'grid-row-end': '2'
+        },
+        children=[
+            html.Div(
+                className = "container", 
+                style = { 
+                    'display' : 'grid',
+                    'grid-template-columns': r'100%',
+                    'margin': 'auto',
+                    'justify-content':'stretch',
+                    'align-self':'center'
+                },
+                children=[
+                    html.Div(className = "item", 
+                        style = {
+                            'grid-column-start': '1',
+                            'grid-column-end': '2',
+                            'grid-row-start': '1',
+                            'grid-row-end': '2',
+                        },
+                        children=[
+                            html.Div(
+                                id        = 'orbitals box', 
+                                style     = {}, 
+                                children  = orbital_plot_options
+                            ),
+                        ]
+                    ),
+                    html.Div(className = "item", 
+                        style = {
+                            'grid-column-start': '1',
+                            'grid-column-end': '2',
+                            'grid-row-start': '2',
+                            'grid-row-end': '3',
+                        },
+                        children=[
+                            html.Div(
+                                id        = 'plot_options_box_2d', 
+                                style     = {}, 
+                                children  = plot_options_2d
+                            ),
+                        ]
+                    ),
+                    html.Div(className = "item", 
+                        style = {
+                            'grid-column-start': '1',
+                            'grid-column-end': '2',
+                            'grid-row-start': '2',
+                            'grid-row-end': '3',
+                        },
+                        children=[
+                            html.Div(
+                                id        = 'plot_options_box_3d', 
+                                style     = {}, 
+                                children  = plot_options_3d
+                            ),
+                        ]
+                    ),
+                    html.Div(
+                        className = "item", 
+                        style = {
+                            'grid-column-start': '1',
+                            'grid-column-end': '2',
+                            'grid-row-start': '3',
+                            'grid-row-end': '4',
+                        },
+                        children=[
+                            html.Div(
+                                className = 'Save Options Box', 
+                                style = {}, 
+                                children  = plot_save_options
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+
+
+
+
+]
+
+##################################################################
+########################## Webpage Main ##########################
+##################################################################
 
 # Layout of webpage
 app.layout = html.Div(children=[
 
-html.Title(children='orbiplot'),
+html.Title(
+    children='orbiplot'
+),
 
-html.Div(style = {'background-color': '#3977AF'},
-            children = [
+html.Div(
+    style = {'background-color': '#3977AF'},
+    children = [
+        html.H1(
+            style = {
+                'textAlign'  : 'center',
+                'fontFamily' : 'sans-serif',
+                'color'      : 'white'
+            },
+            children = 'Orbiplot'
+        )
+    ]
+),
 
-                        html.H1(style = {
-                                         'textAlign'  : 'center',
-                                         'fontFamily' : 'sans-serif',
-                                         'color'      : 'white'
-                                         },
-                                children = 'Orbiplot')
-                        ]
+html.Div(
+        className = "container", 
+        style = {
+            'display' : 'grid',
+            'grid-template-columns': r'50% 50%',
+            'grid-template-rows' : r'100%',
+            'margin': 'auto',
+            'width' : '95%'
+        },
+        children=[
+            html.Div(
+                className = "item", 
+                style = {
+                    'grid-column-start': '1',
+                    'grid-column-end': '2',
+                    'grid-row-start': '1',
+                    'grid-row-end': '2',
+                    'justify-self': 'stretch',
+                    'align-self': 'stretch'
+                },
+                children=[
+                    dcc.Graph(
+                        id='plot_area', 
+                        style = {
+                            'responsive' : 'true',
+                            'height' : '580px',
+                            'automargin' : 'true'
+                        }
+                    )
+                ]
             ),
-
-html.Div(className = "container", 
-         style = { 'display' : 'grid',
-                   'grid-template-columns': r'50% 50%',
-                   'grid-template-rows' : r'100%',
-                   'margin': 'auto',
-                   'width' : '95%'
-
-                  },
-         children=[
-                    html.Div(className = "item", 
-                        style = {
-                                 'grid-column-start': '1',
-                                 'grid-column-end': '2',
-                                 'grid-row-start': '1',
-                                 'grid-row-end': '2',
-                                 'justify-self': 'stretch',
-                                 'align-self': 'stretch'
-                                 },
-                        children=[
-                                  dcc.Graph(id='RDF_Graph', 
-                                            style = {
-                                                     'responsive' : 'true',
-                                                     'height' : '580px',
-                                                     'automargin' : 'true'
-                                                     }
-                                            )
-                                 ]
-                            ),
-                    html.Div(className = "item", 
-                        style = {
-                                 'grid-column-start': '2',
-                                 'grid-column-end': '3',
-                                 'grid-row-start': '1',
-                                 'grid-row-end': '2'
-                                 },
-                        children=[
-                                  html.Div(className = "container", 
-                                           style = { 'display' : 'grid',
-                                                     'grid-template-columns': r'100%',
-                                                     'margin': 'auto',
-                                                     'justify-content':'stretch',
-                                                     'align-self':'center'
-                                                    },
-                                           children=[
-                                                     html.Div(className = "item", 
-                                                         style = {
-                                                                  'grid-column-start': '1',
-                                                                  'grid-column-end': '2',
-                                                                  'grid-row-start': '1',
-                                                                  'grid-row-end': '2',
-                                                                  },
-                                                         children=[
-                                                                    html.Div(id        = 'orbitals box', 
-                                                                             style     = {}, 
-                                                                             children  = orbital_plot_options
-                                                                             ),
-                                                                  ]
-                                                             ),
-                                                     html.Div(className = "item", 
-                                                         style = {
-                                                                  'grid-column-start': '1',
-                                                                  'grid-column-end': '2',
-                                                                  'grid-row-start': '2',
-                                                                  'grid-row-end': '3',
-                                                                  },
-                                                         children=[
-                                                                    html.Div(id        = 'plot_options_box_2d', 
-                                                                             style     = {}, 
-                                                                             children  = plot_options_2d
-                                                                             ),
-                                                                  ]
-                                                             ),
-                                                     html.Div(className = "item", 
-                                                         style = {
-                                                                  'grid-column-start': '1',
-                                                                  'grid-column-end': '2',
-                                                                  'grid-row-start': '2',
-                                                                  'grid-row-end': '3',
-                                                                  },
-                                                         children=[
-                                                                    html.Div(id        = 'plot_options_box_3d', 
-                                                                             style     = {}, 
-                                                                             children  = plot_options_3d
-                                                                             ),
-                                                                  ]
-                                                             ),
-                                                     html.Div(className = "item", 
-                                                         style = {
-                                                                  'grid-column-start': '1',
-                                                                  'grid-column-end': '2',
-                                                                  'grid-row-start': '3',
-                                                                  'grid-row-end': '4',
-                                                                  },
-                                                         children=[
-                                                                    html.Div(className = 'Save Options Box', 
-                                                                             style = {}, 
-                                                                             children  = plot_save_options
-                                                                            )
-
-                                                                  ]
-                                                             ),
-                                                     ]
-                                          )
-
-                                 ]
-                            )
-                 ]
+            dcc.Tabs(
+                id='options-tab',
+                children=[
+                    dcc.Tab(
+                        style ={
+                        'fontFamily'      : 'sans-serif',
+                        },
+                        selected_style ={
+                        'fontFamily'      : 'sans-serif',
+                        },
+                        label='Orbitals', 
+                        value='orb_tab', 
+                        children = orb_tab
+                    ),
+                    dcc.Tab(
+                        style ={
+                        'fontFamily'      : 'sans-serif',
+                        },
+                        selected_style ={
+                        'fontFamily'      : 'sans-serif',
+                        },
+                        label='Vibrations/Rotations', 
+                        value='vib_tab', 
+                        children = html.Div(style = {'fontFamily'      : 'sans-serif'},children=[html.H1(['Coming soon...'])])
+                    ),
+                    dcc.Tab(
+                        style ={
+                        'fontFamily'      : 'sans-serif',
+                        },
+                        selected_style ={
+                        'fontFamily'      : 'sans-serif',
+                        },
+                        label='Translations', 
+                        value='trans_tab', 
+                        children = html.Div(style = {'fontFamily'      : 'sans-serif'},children=[html.H1(['Coming soon...'])])
+                    ),
+                ],
+                value='orb_tab'
+            ),
+        ]
+    ),
+html.Footer(
+    style = {
+        'textAlign'       : 'center', 
+        'fontFamily'      : 'sans-serif',
+        'font-size'       : 'smaller',
+        'color'           : 'white',
+        'background-color': '#3977AF'
+    }, 
+    children=[
+        html.P(
+            children = [
+            'Jon Kragskow'
+            ]
         ),
-html.Footer(style = {
-                     'textAlign'       : 'center', 
-                     'fontFamily'      : 'sans-serif',
-                     'font-size'       : 'smaller',
-                     'color'           : 'white',
-                     'background-color': '#3977AF'
-                    }, 
-            children=[
-                      html.P(children = ['Author: Jon Kragskow']),
-                      html.A(href = 'https://www.kragskow.com/',
-                             style = {'color':'white'},
-                             children = 'https://www.kragskow.com/')
-                     ]
-           ),
+        html.A(
+            href = 'https://www.kragskow.com/',
+            style = {
+                'color':'white'
+            },
+            children = 'https://www.kragskow.com/'
+        )
+    ]
+),
 refresh_plots,
 mathjax_script
 ])
@@ -1537,106 +1649,110 @@ mathjax_script
 def toggle_pob(on_off) :
 
     if on_off == 'on' :
-        return   {'display' : 'inline-block' , 
-                'padding-left':'5%', 
-                'padding-bottom':'5%' , 
-                'padding-right':'5%', 
-                'width' : '90%', 
-                'borderStyle' : 'solid', 
-                'borderWidth' : '0px',
-                'textAlign' : 'center'}
+        return {
+            'display' : 'inline-block' , 
+            'padding-left':'5%', 
+            'padding-bottom':'5%' , 
+            'padding-right':'5%', 
+            'width' : '90%', 
+            'borderStyle' : 'solid', 
+            'borderWidth' : '0px',
+            'textAlign' : 'center'
+        }
     else :
-        return {'display' : 'none' , 
-                'padding-left':'5%', 
-                'padding-bottom':'5%' , 
-                'padding-right':'5%', 
-                'width' : '90%', 
-                'borderStyle' : 'solid', 
-                'borderWidth' : '0px',
-                'textAlign' : 'center'}
+        return {
+            'display' : 'none' , 
+            'padding-left':'5%', 
+            'padding-bottom':'5%' , 
+            'padding-right':'5%', 
+            'width' : '90%', 
+            'borderStyle' : 'solid', 
+            'borderWidth' : '0px',
+            'textAlign' : 'center'
+        }
 
 def orb_checklist(dimension):
     if dimension == '2d':
         return[
-               {'label': '1s', 'value': '1s'},
-               {'label': '2s', 'value': '2s'},
-               {'label': '3s', 'value': '3s'},
-               {'label': '4s', 'value': '4s'},
-               {'label': '5s', 'value': '5s'},
-               {'label': '6s', 'value': '6s'},
-               {'label': '2p', 'value': '2p'},
-               {'label': '3p', 'value': '3p'},
-               {'label': '4p', 'value': '4p'},
-               {'label': '5p', 'value': '5p'},
-               {'label': '6p', 'value': '6p'},
-               {'label': '3d', 'value': '3d'},
-               {'label': '4d', 'value': '4d'},
-               {'label': '5d', 'value': '5d'},
-               {'label': '6d', 'value': '6d'},
-               {'label': '4f', 'value': '4f'},
-               {'label': '5f', 'value': '5f'},
-               {'label': '6f', 'value': '6f'},
-              ]
+            {'label': '1s', 'value': '1s'},
+            {'label': '2s', 'value': '2s'},
+            {'label': '3s', 'value': '3s'},
+            {'label': '4s', 'value': '4s'},
+            {'label': '5s', 'value': '5s'},
+            {'label': '6s', 'value': '6s'},
+            {'label': '2p', 'value': '2p'},
+            {'label': '3p', 'value': '3p'},
+            {'label': '4p', 'value': '4p'},
+            {'label': '5p', 'value': '5p'},
+            {'label': '6p', 'value': '6p'},
+            {'label': '3d', 'value': '3d'},
+            {'label': '4d', 'value': '4d'},
+            {'label': '5d', 'value': '5d'},
+            {'label': '6d', 'value': '6d'},
+            {'label': '4f', 'value': '4f'},
+            {'label': '5f', 'value': '5f'},
+            {'label': '6f', 'value': '6f'},
+        ]
 
     elif dimension == '3d':
         return[
-               {'label': '1s', 'value': '1s'},
-               {'label': '2s', 'value': '2s'},
-               {'label': '3s', 'value': '3s'},
-               {'label': '4s', 'value': '4s'},
-               {'label': '5s', 'value': '5s'},
-               {'label': '6s', 'value': '6s'},
-               {'label': '2p', 'value': '2p'},
-               {'label': '3p', 'value': '3p'},
-               {'label': '4p', 'value': '4p'},
-               {'label': '5p', 'value': '5p'},
-               {'label': '6p', 'value': '6p'},
-               {'label': '3dz²', 'value': '3d_z2'},
-               {'label': '4dz²', 'value': '4d_z2'},
-               {'label': '5dz²', 'value': '5d_z2'},
-               {'label': '6dz²', 'value': '6d_z2'},
-               {'label': '3dxy', 'value': '3dxy'},
-               {'label': '4dxy', 'value': '4dxy'},
-               {'label': '5dxy', 'value': '5dxy'},
-               {'label': '6dxy', 'value': '6dxy'},
-               {'label': '4fz³', 'value': '4fz3'},
-               {'label': '5fz³', 'value': '5fz3'},
-               {'label': '6fz³', 'value': '6fz3'},
-               {'label': '4fxyz', 'value': '4fxyz'},
-               {'label': '5fxyz', 'value': '5fxyz'},
-               {'label': '6fxyz', 'value': '6fxyz'},
-               {'label': '4fyz²', 'value': '4fyz2'},
-               {'label': '5fyz²', 'value': '5fyz2'},
-               {'label': '6fyz²', 'value': '6fyz2'},
-              ]
+            {'label': '1s', 'value': '1s'},
+            {'label': '2s', 'value': '2s'},
+            {'label': '3s', 'value': '3s'},
+            {'label': '4s', 'value': '4s'},
+            {'label': '5s', 'value': '5s'},
+            {'label': '6s', 'value': '6s'},
+            {'label': '2p', 'value': '2p'},
+            {'label': '3p', 'value': '3p'},
+            {'label': '4p', 'value': '4p'},
+            {'label': '5p', 'value': '5p'},
+            {'label': '6p', 'value': '6p'},
+            {'label': '3dz²', 'value': '3d_z2'},
+            {'label': '4dz²', 'value': '4d_z2'},
+            {'label': '5dz²', 'value': '5d_z2'},
+            {'label': '6dz²', 'value': '6d_z2'},
+            {'label': '3dxy', 'value': '3dxy'},
+            {'label': '4dxy', 'value': '4dxy'},
+            {'label': '5dxy', 'value': '5dxy'},
+            {'label': '6dxy', 'value': '6dxy'},
+            {'label': '4fz³', 'value': '4fz3'},
+            {'label': '5fz³', 'value': '5fz3'},
+            {'label': '6fz³', 'value': '6fz3'},
+            {'label': '4fxyz', 'value': '4fxyz'},
+            {'label': '5fxyz', 'value': '5fxyz'},
+            {'label': '6fxyz', 'value': '6fxyz'},
+            {'label': '4fyz²', 'value': '4fyz2'},
+            {'label': '5fyz²', 'value': '5fyz2'},
+            {'label': '6fyz²', 'value': '6fyz2'},
+        ]
 ##################################################################################################################################
 ########################################################### Callbacks ############################################################
 ##################################################################################################################################
 
 
 #Callback which defines what changes ('figure') and what causes the change (Checkbox being pressed)
-@app.callback([ddep.Output('RDF_Graph', 'figure'),
-               ddep.Output('RDF_Graph', 'config'),
+@app.callback([ddep.Output('plot_area', 'figure'),
+               ddep.Output('plot_area', 'config'),
                ddep.Output('plot_options_box_2d', 'style'),
                ddep.Output('plot_options_box_3d', 'style'),
                ddep.Output('OrbCheck', 'options')],
               [ddep.Input('OrbCheck', 'value'),
-               ddep.Input('FuncType', 'value'), 
-               ddep.Input('LineWidthSlider','value'), 
-               ddep.Input('TextSizeSlider','value'), 
+               ddep.Input('function_type', 'value'), 
+               ddep.Input('linewidth_slider','value'), 
+               ddep.Input('text_size_slider','value'), 
                ddep.Input('xgridcheck','value'), 
                ddep.Input('ygridcheck','value'), 
-               ddep.Input('UpperxInput', 'value'),
-               ddep.Input('LowerxInput', 'value'),
-               ddep.Input('PlotFormatDropdown', 'value'), 
-               ddep.Input('PlotHeightInput', 'value'),
-               ddep.Input('PlotWidthInput', 'value'),
-               ddep.Input('Colours_2d','value'),
-               ddep.Input('Colours_3d','value'),
-               ddep.Input('Cutaway','value')])
+               ddep.Input('upper_x_in', 'value'),
+               ddep.Input('lower_x_in', 'value'),
+               ddep.Input('save_format', 'value'), 
+               ddep.Input('plot_height_in', 'value'),
+               ddep.Input('plot_width_in', 'value'),
+               ddep.Input('colours_2d','value'),
+               ddep.Input('colours_3d','value'),
+               ddep.Input('cutaway_in','value')])
 
 #Function which is called after the element is pressed
-def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
+def UpdatePlot(Orbitals, function_type, Thickness, TextSize, xgridinput,
                ygridinput, upperxlim, lowerxlim,PlotFormat,
                PlotHeight, PlotWidth,colour_name_2d, colour_name_3d, cutaway):
 
@@ -1648,24 +1764,24 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
         upperxlim = lowerxlim + 80
 
     #Read type of wavefunction being requested and set axis names
-    if FuncType == 'RDF':
+    if function_type == 'RDF':
         WFFlag = 1
         WFName = r'$\text{Radial Distribution Function}  \ \ \ 4\pi r^2 R(r)^2$'
         file_name = 'radial_distribution_functions'
-    if FuncType == 'RWF':
+    if function_type == 'RWF':
         WFFlag = 2
         WFName = r'$\text{Radial Wavefunction}  \ \ \ R(r) $\n'
         file_name = 'radial_wavefunctions'
-    if FuncType == '3DWF':
+    if function_type == '3DWF':
         WFFlag = 3
         WFName = ''
 
     # Plot radial wavefunction or radial distribution function
     if WFFlag == 2 or WFFlag == 1:
         return {
-                'data': radial_2d(Orbitals, max(lowerxlim,0), max(upperxlim,0), WFFlag, Thickness),
-                'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName, lowerxlim, upperxlim)
-                }, modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name), toggle_pob('on'), toggle_pob('off'), orb_checklist('2d')
+            'data': radial_2d(Orbitals, max(lowerxlim,0), max(upperxlim,0), WFFlag, Thickness),
+            'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName, lowerxlim, upperxlim)
+        }, modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name), toggle_pob('on'), toggle_pob('off'), orb_checklist('2d')
 
     # Plot wavefunction isosurface
     # use first selection
@@ -1676,16 +1792,16 @@ def UpdatePlot(Orbitals, FuncType, Thickness, TextSize, xgridinput,
                                 specs=[[{'is_3d': True}]]
                                )
 
-            fig, upper, lower = orbitals_3d(Orbitals[0], colour_name_3d, fig, np.float64(cutaway))
+            fig, upper, lower = orbitals_3d(Orbitals[0], colour_name_3d, fig, np.float(cutaway))
 
             fig.update_layout(ax_config_3d(upper, lower))
 
             return  fig,modebar_config(PlotFormat, PlotHeight, PlotWidth, Orbitals[0]+' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
         else:
             return {
-                    'data'   : None,
-                    'layout' : ax_config_3d()
-                    }, modebar_config(PlotFormat, PlotHeight, PlotWidth, ' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
+                'data'   : None,
+                'layout' : ax_config_3d()
+            }, modebar_config(PlotFormat, PlotHeight, PlotWidth, ' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
 
 
 def radial_2d(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
@@ -1714,68 +1830,66 @@ def radial_2d(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
             y = plot_radial_f(n, x, WFFlag)
 
         traces.append(go.Scatter(
-                      x = x,
-                      y = y,
-                      line = dict(width = Thickness),
-                      name = Orbitals[it], 
-                      hoverinfo = 'none')
-                      )
+            x = x,
+            y = y,
+            line = dict(width = Thickness),
+            name = Orbitals[it], 
+            hoverinfo = 'none')
+        )
 
     return traces
 
-
 def ax_config_3d(upper=0, lower=0):
     return go.Layout(
-                     hovermode=False,
-                     dragmode="orbit",
-                     scene_aspectmode='cube',
-                     scene=dict(
-                                xaxis=dict(
-                                           gridcolor='rgb(255, 255, 255)',
-                                           zerolinecolor='rgb(255, 255, 255)',
-                                           showbackground=False,
-                                           showgrid=False,
-                                           zeroline=False,
-                                           title='',
-                                           showline=False,
-                                           ticks='',
-                                           showticklabels=False,
-                                           backgroundcolor='rgb(255, 255,255)',
-                                           range=[lower, upper]
-                                          ),
-                                yaxis=dict(
-                                           gridcolor='rgb(255, 255, 255)',
-                                           zerolinecolor='rgb(255, 255, 255)',
-                                           showgrid=False,
-                                           zeroline=False,
-                                           title='',
-                                           showline=False,
-                                           ticks='',
-                                           showticklabels=False,
-                                           backgroundcolor='rgb(255, 255,255)',
-                                           range=[lower, upper]
-                                          ),
-                                zaxis=dict(
-                                           gridcolor='rgb(255, 255, 255)',
-                                           zerolinecolor='rgb(255, 255, 255)',
-                                           showgrid=False,
-                                           title='',
-                                           zeroline=False,
-                                           showline=False,
-                                           ticks='',
-                                           showticklabels=False,
-                                           backgroundcolor='rgb(255, 255,255)',
-                                           range=[lower, upper]
-                                          ),
-                                aspectratio=dict(
-                                                 x=1,
-                                                 y=1,
-                                                 z=1
-                                                ),
-                                
-                                ),
-                     margin=dict(l=20, r=30, t=30, b=20),
-                    )
+        hovermode=False,
+        dragmode="orbit",
+        scene_aspectmode='cube',
+        scene=dict(
+            xaxis=dict(
+                gridcolor='rgb(255, 255, 255)',
+                zerolinecolor='rgb(255, 255, 255)',
+                showbackground=False,
+                showgrid=False,
+                zeroline=False,
+                title='',
+                showline=False,
+                ticks='',
+                showticklabels=False,
+                backgroundcolor='rgb(255, 255,255)',
+                range=[lower, upper]
+            ),
+            yaxis=dict(
+                gridcolor='rgb(255, 255, 255)',
+                zerolinecolor='rgb(255, 255, 255)',
+                showgrid=False,
+                zeroline=False,
+                title='',
+                showline=False,
+                ticks='',
+                showticklabels=False,
+                backgroundcolor='rgb(255, 255,255)',
+                range=[lower, upper]
+                ),
+            zaxis=dict(
+                       gridcolor='rgb(255, 255, 255)',
+                       zerolinecolor='rgb(255, 255, 255)',
+                       showgrid=False,
+                       title='',
+                       zeroline=False,
+                       showline=False,
+                       ticks='',
+                       showticklabels=False,
+                       backgroundcolor='rgb(255, 255,255)',
+                       range=[lower, upper]
+                      ),
+            aspectratio=dict(
+                x=1,
+                y=1,
+                z=1
+            ),
+        ),
+        margin=dict(l=20, r=30, t=30, b=20),
+    )
 
 def ax_config_2d(xgridinput, ygridinput, TextSize, WFName, xlow, xup):
 
