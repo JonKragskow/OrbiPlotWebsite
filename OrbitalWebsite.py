@@ -1,17 +1,18 @@
+#! /usr/bin/env python3
+
 import numpy as np
+import os
 import dash
-import math
 import dash_core_components as dcc
 import dash_html_components as html
-import plotly.graph_objs as go
+import dash_bootstrap_components as dbc
 import dash.dependencies as ddep
-from subprocess import call
-import json
-from plotly.subplots import make_subplots
 import dash_defer_js_import as dji
-from scipy.special import sph_harm
-from plotly.subplots import make_subplots
+import plotly.graph_objs as go
 
+app = dash.Dash(__name__, 
+    external_stylesheets=["https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"],
+    external_scripts=['https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'])
 ####################################################################################################
 ####################################### Radial Functions ###########################################
 ####################################################################################################
@@ -247,7 +248,7 @@ def set_3d_colour(colour_name):
 
     return colours
 
-def get_orb_name(orb):
+def name_to_qn(orb):
     """
     Separates string containing orbital name into n and l quantum numbers
 
@@ -262,78 +263,23 @@ def get_orb_name(orb):
 
     return n,l
 
-def orbitals_3d(orb_name, colour_name, fig, cutaway):
+def calc_s_orb(n, cutaway):
     """
-    Plots isosurfaces of atomic orbitals
+    Calculates s orbital wavefunction on a grid
 
     Input:
-        orb_name (string)       :: name of orbital
-        colour_name (string)    :: name of colour palette
-        fig (plotly fig object) :: plotly fig object
-        cutaway (float)         :: % of orbital to keep/plot
+        n (int)       :: prinipal quantum number of orbital
+        cutaway (int) :: number used to split orbital in half 
     Returns:
-        fig (plotly fig object) :: plotly fig object with new graph added
-        upper (float)           :: upper bound of all axis limits 
-        lower (float)           :: lower bound of all axis limits 
+        x (np.mgrid)   :: x values
+        y (np.mgrid)   :: y values
+        z (np.mgrid)   :: z values
+        wav (np.mgrid) :: wavefunction values at x, y, z
+        upper (float)  :: max value of axes
+        lower (float)  :: min value of axes
+        ival, (float)  :: isoval to plot orbital at
     """
 
-    # Get colours of lobes
-    colours = set_3d_colour(colour_name)
-    
-    # Get orbital n value and name
-    n, l = get_orb_name(orb_name)
-
-    if l == 's':
-
-        x, y, z, wav, upper, lower, ival = plot_s_orb(n, cutaway)
-
-    elif l == 'p':
-
-        fig, upper, lower= plot_p_orb(n, cutaway, colours, fig)
-
-    elif l == 'd':  
-
-        if 'xy' in orb_name:
-
-            x, y, z, wav, upper, lower, ival = plot_dxy_orb(n, cutaway)
-
-        else:
-
-            x, y, z, wav, upper, lower, ival = plot_dz_orb(n, cutaway)
-
-    elif l == 'f':
-
-        if 'xyz' in orb_name:
-
-            x, y, z, wav, upper, lower, ival = plot_fxyz_orb(n, cutaway)
-
-
-        elif 'yz2' in orb_name:
-
-        	x, y, z, wav, upper, lower, ival = plot_fyz2_orb(n, cutaway)
-
-        else:
-
-            x, y, z, wav, upper, lower, ival = plot_fz_orb(n, cutaway)
-
-    if l != "p":
-
-        fig.add_trace(go.Isosurface(
-            x=x.flatten(),
-            y=y.flatten(),
-            z=z.flatten(),
-            value=wav.flatten(),
-            isomin=-ival,
-            isomax=ival,
-            flatshading=False,
-            caps=dict(x_show=False, y_show=False, z_show=False),
-            showscale=False,
-            colorscale=colours
-            ))
-
-    return fig, upper, lower
-
-def plot_s_orb(n, cutaway):
 
     if n == 1:
         upper =  10
@@ -387,7 +333,7 @@ def plot_s_orb(n, cutaway):
 
     return x, y, z, wav, upper, lower, ival
 
-def plot_p_orb(n, cutaway, colours, fig):
+def plot_p_orb(n, cutaway, colours):
 
     # Set contour level
     if n < 5:
@@ -446,9 +392,10 @@ def plot_p_orb(n, cutaway, colours, fig):
         z  = np.append(z, -zt, axis=0)
         co = np.append(co, cot2, axis=0)
 
-    fig.add_trace(go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False), 1, 1)
+    data = go.Surface(x=x, y=y, z=z, surfacecolor = co, colorscale=colours, showscale=False)
 
-    return fig, -orb_r_bounds[-1,1], orb_r_bounds[-1,1]
+    return data, -orb_r_bounds[-1,1], orb_r_bounds[-1,1]
+
 def calc_p_orb(n, c, bounds, ang, num_lobes, angle_steps, r_steps, r_mini_steps):
 
     gap = np.abs(bounds[1] - bounds[0])
@@ -470,8 +417,22 @@ def calc_p_orb(n, c, bounds, ang, num_lobes, angle_steps, r_steps, r_mini_steps)
 
     return x, y, z
 
-def plot_dz_orb(n, cutaway):
+def calc_dz_orb(n, cutaway):
+    """
+    Calculates dz2 orbital wavefunction on a grid
 
+    Input:
+        n (int)       :: prinipal quantum number of orbital
+        cutaway (int) :: number used to split orbital in half 
+    Returns:
+        x (np.mgrid)   :: x values
+        y (np.mgrid)   :: y values
+        z (np.mgrid)   :: z values
+        wav (np.mgrid) :: wavefunction values at x, y, z
+        upper (float)  :: max value of axes
+        lower (float)  :: min value of axes
+        ival, (float)  :: isoval to plot orbital at
+    """
     if n == 3:
         upper = 40
         lower = -40
@@ -512,7 +473,23 @@ def plot_dz_orb(n, cutaway):
 
     return x, y, z, wav, upper, lower, ival
 
-def plot_dxy_orb(n, cutaway):
+
+def calc_dxy_orb(n, cutaway):
+    """
+    Calculates dxy orbital wavefunction on a grid
+
+    Input:
+        n (int)       :: prinipal quantum number of orbital
+        cutaway (int) :: number used to split orbital in half 
+    Returns:
+        x (np.mgrid)   :: x values
+        y (np.mgrid)   :: y values
+        z (np.mgrid)   :: z values
+        wav (np.mgrid) :: wavefunction values at x, y, z
+        upper (float)  :: max value of axes
+        lower (float)  :: min value of axes
+        ival, (float)  :: isoval to plot orbital at
+    """
 
     if n == 3:
         upper =  45
@@ -552,7 +529,23 @@ def plot_dxy_orb(n, cutaway):
         
     return x, y, z, wav, upper, lower, ival
 
-def plot_fz_orb(n, cutaway):
+
+def calc_fz_orb(n, cutaway):
+    """
+    Calculates fz3 orbital wavefunction on a grid
+
+    Input:
+        n (int)       :: prinipal quantum number of orbital
+        cutaway (int) :: number used to split orbital in half 
+    Returns:
+        x (np.mgrid)   :: x values
+        y (np.mgrid)   :: y values
+        z (np.mgrid)   :: z values
+        wav (np.mgrid) :: wavefunction values at x, y, z
+        upper (float)  :: max value of axes
+        lower (float)  :: min value of axes
+        ival, (float)  :: isoval to plot orbital at
+    """
 
     if n == 4:
         upper = 70
@@ -586,7 +579,22 @@ def plot_fz_orb(n, cutaway):
   
     return x, y, z, wav, upper, lower, ival
 
-def plot_fxyz_orb(n, cutaway):
+def calc_fxyz_orb(n, cutaway):
+    """
+    Calculates fxyz orbital wavefunction on a grid
+
+    Input:
+        n (int)       :: prinipal quantum number of orbital
+        cutaway (int) :: number used to split orbital in half 
+    Returns:
+        x (np.mgrid)   :: x values
+        y (np.mgrid)   :: y values
+        z (np.mgrid)   :: z values
+        wav (np.mgrid) :: wavefunction values at x, y, z
+        upper (float)  :: max value of axes
+        lower (float)  :: min value of axes
+        ival, (float)  :: isoval to plot orbital at
+    """
 
     if n == 4:
         upper = 60
@@ -620,7 +628,22 @@ def plot_fxyz_orb(n, cutaway):
   
     return x, y, z, wav, upper, lower, ival
 
-def plot_fyz2_orb(n, cutaway):
+def calc_fyz2_orb(n, cutaway):
+    """
+    Calculates fyz2 orbital wavefunction on a grid
+
+    Input:
+        n (int)       :: prinipal quantum number of orbital
+        cutaway (int) :: number used to split orbital in half 
+    Returns:
+        x (np.mgrid)   :: x values
+        y (np.mgrid)   :: y values
+        z (np.mgrid)   :: z values
+        wav (np.mgrid) :: wavefunction values at x, y, z
+        upper (float)  :: max value of axes
+        lower (float)  :: min value of axes
+        ival, (float)  :: isoval to plot orbital at
+    """
 
     if n == 4:
         upper = 65
@@ -657,28 +680,64 @@ def plot_fyz2_orb(n, cutaway):
 def swap(colour_1, colour_2):
     return colour_2, colour_1
 
-def plot_radial_s(n, r, mode):
-    if mode==1:
+def calc_radial_s(n, r, wf_type):
+    """
+    Calculates s orbital rwf or rdf
+
+    Input:
+        n (int)      :: prinipal quantum number of orbital
+        r (np.array) :: r values
+    Returns:
+        y (np.array) :: y values corresponding to rwf or rdf
+    """
+    if "RDF" in wf_type:
         return r**2.* radial_s(n, 2.*r/n)**2
-    if mode==2:
+    if "RWF" in wf_type:
         return radial_s(n, 2.*r/n)
 
-def plot_radial_p(n, r, mode):    
-    if mode==1:
+def calc_radial_p(n, r, wf_type):
+    """
+    Calculates p orbital rwf or rdf
+
+    Input:
+        n (int)      :: prinipal quantum number of orbital
+        r (np.array) :: r values
+    Returns:
+        y (np.array) :: y values corresponding to rwf or rdf
+    """
+    if "RDF" in wf_type:
         return r**2.* radial_p(n, 2.*r/n)**2
-    if mode==2:
+    if "RWF" in wf_type:
         return radial_p(n, 2.*r/n)
 
-def plot_radial_d(n, r, mode):
-    if mode==1:
+def calc_radial_d(n, r, wf_type):
+    """
+    Calculates d orbital rwf or rdf
+
+    Input:
+        n (int)      :: prinipal quantum number of orbital
+        r (np.array) :: r values
+    Returns:
+        y (np.array) :: y values corresponding to rwf or rdf
+    """
+    if "RDF" in wf_type:
         return r**2.* radial_d(n, 2.*r/n)**2
-    if mode==2:
+    if "RWF" in wf_type:
         return radial_d(n, 2.*r/n)
 
-def plot_radial_f(n, r, mode):
-    if mode==1:
+def calc_radial_f(n, r, wf_type):
+    """
+    Calculates f orbital rwf or rdf
+
+    Input:
+        n (int)      :: prinipal quantum number of orbital
+        r (np.array) :: r values
+    Returns:
+        y (np.array) :: y values corresponding to rwf or rdf
+    """
+    if "RDF" in wf_type:
         return r**2.* radial_f(n, 2.*r/n)**2
-    if mode==2:
+    if "RWF" in wf_type:
         return radial_f(n, 2.*r/n)
 
 ##################################################################
@@ -687,14 +746,6 @@ def plot_radial_f(n, r, mode):
 
 #Build the webpage layout
 
-mathjax_script = dji.Import(src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_SVG")
-refresh_plots =  dji.Import(src="https://codepen.io/chrisvoncsefalvay/pen/ExPJjWP.js")
-
-app = dash.Dash(__name__)
-
-
-# app.css.append_css({"external_url": "https://max.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"})
-
 # Change header 
 # %thing% are defined by dash and are replaced at runtime
 app.index_string = r'''
@@ -702,7 +753,7 @@ app.index_string = r'''
 <html>
     <head>
         {%metas%}
-        <title>Orbiplot</title>
+        <title>Waveplot</title>
         <meta name="description" content="Online atomic orbital viewer">
         <meta name="keywords" content="Online atomic orbital viewer">
         <meta name="author" content="Jon Kragskow">
@@ -714,19 +765,23 @@ app.index_string = r'''
         <footer>
             {%config%}
             {%scripts%}
-            <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                tex2jax: {
-                inlineMath: [ ['$','$'],],
-                processEscapes: true
-                }
-            });
-            </script>
             {%renderer%}
         </footer>
     </body>
 </html>
 '''
+
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dbc.NavLink("Orbitals", href="#", )),
+        dbc.NavItem(dbc.NavLink("Vibrations", href="#")),
+        dbc.NavItem(dbc.NavLink("Translations", href="#")),
+    ],
+    brand="Waveplot",
+    brand_href="#",
+    color="primary",
+    dark=True,
+)
 
 orbital_plot_options = [html.Div(
     className = "container", 
@@ -744,10 +799,9 @@ orbital_plot_options = [html.Div(
                 'grid-row-end': '2'
             },
             children=[
-                html.H2(
+                html.H4(
                     style = {
                         'textAlign' : 'center', 
-                        'fontFamily' : 'sans-serif'
                         },
                     children = 'Orbital'
                 ),
@@ -761,36 +815,33 @@ orbital_plot_options = [html.Div(
                 'grid-row-start': '2',
                 'grid-row-end': '3'},
             children=[
-                dcc.Checklist(id = 'OrbCheck', 
+                dcc.Dropdown(id = 'orb_checklist', 
                     style = {
-                        'textAlign' : 'left',
-                        'fontFamily' : 'sans-serif'
+                        'textAlign' : 'left'
                     },
                     options=[
-                        {'label': '1s', 'value': '1s'},
-                        {'label': '2s', 'value': '2s'},
-                        {'label': '3s', 'value': '3s'},
-                        {'label': '4s', 'value': '4s'},
-                        {'label': '5s', 'value': '5s'},
-                        {'label': '6s', 'value': '6s'},
-                        {'label': '2p', 'value': '2p'},
-                        {'label': '3p', 'value': '3p'},
-                        {'label': '4p', 'value': '4p'},
-                        {'label': '5p', 'value': '5p'},
-                        {'label': '6p', 'value': '6p'},
-                        {'label': '3d', 'value': '3d'},
-                        {'label': '4d', 'value': '4d'},
-                        {'label': '5d', 'value': '5d'},
-                        {'label': '6d', 'value': '6d'},
-                        {'label': '4f', 'value': '4f'},
-                        {'label': '5f', 'value': '5f'},
-                        {'label': '6f', 'value': '6f'},
+                        {"label": '1s', "value": '1s'},
+                        {"label": '2s', "value": '2s'},
+                        {"label": '3s', "value": '3s'},
+                        {"label": '4s', "value": '4s'},
+                        {"label": '5s', "value": '5s'},
+                        {"label": '6s', "value": '6s'},
+                        {"label": '2p', "value": '2p'},
+                        {"label": '3p', "value": '3p'},
+                        {"label": '4p', "value": '4p'},
+                        {"label": '5p', "value": '5p'},
+                        {"label": '6p', "value": '6p'},
+                        {"label": '3d', "value": '3d'},
+                        {"label": '4d', "value": '4d'},
+                        {"label": '5d', "value": '5d'},
+                        {"label": '6d', "value": '6d'},
+                        {"label": '4f', "value": '4f'},
+                        {"label": '5f', "value": '5f'},
+                        {"label": '6f', "value": '6f'},
                     ],
                     value=['2p'],
-                    labelStyle={
-                        'maxwidth' : '20px',
-                        'display': 'inline-block'
-                    }
+                    multi=True, # browser autocomplete needs to be killed here, when they implement it
+                    placeholder = "Orbital..."
                 ),
             ]
         ),
@@ -802,10 +853,9 @@ orbital_plot_options = [html.Div(
                 'grid-row-end': '2'
             },
             children=[
-                html.H2(
+                html.H4(
                     style = {
                         'textAlign' : 'center', 
-                        'fontFamily' : 'sans-serif'
                     },
                     children = 'Function'
                 ),
@@ -824,21 +874,20 @@ orbital_plot_options = [html.Div(
                     id = 'function_type', 
                     style = {
                         'textAlign' : 'center',
-                        'fontFamily' : 'sans-serif',
                         'display': 'block'
                     },
                     options=[
                         {
-                         'label': 'Radial Distribution Function',
-                         'value': 'RDF'
+                         "label": 'Radial Distribution Function',
+                         "value": 'RDF'
                         },
                         {
-                         'label': 'Radial Wave Function',
-                         'value': 'RWF'
+                         "label": 'Radial Wave Function',
+                         "value": 'RWF'
                         },
                         {
-                         'label': '3D Surface', 
-                         'value': '3DWF'
+                         "label": '3D Surface', 
+                         "value": '3DWF'
                         }
                     ],
                     value='RDF',
@@ -853,10 +902,9 @@ orbital_plot_options = [html.Div(
 
 plot_options_2d = [
                 
-    html.H2(
+    html.H4(
         style = {
             'textAlign' : 'center', 
-            'fontFamily' : 'sans-serif'
         },
         children = 'Plot Options'),
     html.Div(
@@ -879,7 +927,6 @@ plot_options_2d = [
                     html.P(
                         style = {
                             'textAlign' : 'center', 
-                            'fontFamily' : 'sans-serif'
                         },
                         children = 'Gridlines'
                     ),
@@ -895,7 +942,6 @@ plot_options_2d = [
                 html.P(
                     style = {
                         'textAlign' : 'center', 
-                        'fontFamily' : 'sans-serif'
                     },
                     children = 'Lower x limit'
                 ),
@@ -913,7 +959,6 @@ plot_options_2d = [
                 html.P(
                     style = {
                         'textAlign' : 'center', 
-                        'fontFamily' : 'sans-serif'
                         },
                     children = 'Upper x limit'
                 ),
@@ -924,7 +969,7 @@ plot_options_2d = [
             style = {
                 'display' : 'grid',
                 'grid-template-columns': r'100%',
-                'grid-template-rows' : r'50% 50%'
+                'grid-template-rows' : r'40% 60%'
             },
             children=[
                 html.Div(
@@ -937,46 +982,18 @@ plot_options_2d = [
                     },
                     children=[
                         dcc.Checklist(
-                            id = 'xgridcheck',
+                            id = 'gridlines',
                             style = {
                                 'textAlign' : 'center', 
-                                'fontFamily' : 'sans-serif'
                             },
                             options=[
-                                {
-                                 'label': ' x-Axis ', 
-                                 'value': 'xgridval'
-                                }
+                                {"label": ' x-Axis ', "value": 'x'},
+                                {"label": ' y-Axis ', "value": 'y'}
                             ],
                             value=[],
                         )
                     ]
                 ),
-                html.Div(
-                    className = "item", 
-                    style = {
-                        'grid-column-start': '1',
-                        'grid-column-end': '2',
-                        'grid-row-start': '2',
-                        'grid-row-end': '3'
-                    },
-                    children=[
-                        dcc.Checklist(
-                            id = 'ygridcheck',
-                            style = {
-                                     'textAlign' : 'center', 
-                                     'fontFamily' : 'sans-serif'
-                            },
-                            options=[
-                                     {
-                                      'label': ' y-Axis ', 
-                                      'value': 'ygridval'
-                                     }
-                            ],
-                            value=[],
-                            )
-                        ]
-                    )
                 ]
             ),
         html.Div(
@@ -1011,10 +1028,10 @@ plot_options_2d = [
             children=[
                 dcc.Input(
                     id = 'upper_x_in',
-                    placeholder = 80,
+                    placeholder = 100,
                     type='number',
                     max = 100,
-                    value = 80,
+                    value = 100,
                     style = {
                         'width':'40%'
                     }
@@ -1033,7 +1050,6 @@ plot_options_2d = [
                 html.P(
                     style = {
                         'textAlign' : 'center', 
-                        'fontFamily' : 'sans-serif'
                     },
                     children = 'Line Width'
                 )
@@ -1069,7 +1085,6 @@ plot_options_2d = [
                 html.P(
                     style = {
                         'textAlign' : 'center', 
-                        'fontFamily' : 'sans-serif'
                     },
                     children = 'Text Size'
                 )
@@ -1103,7 +1118,6 @@ plot_options_2d = [
                 html.P(
                     style = {
                         'textAlign' : 'center', 
-                        'fontFamily' : 'sans-serif'
                     },
                     children = 'Plot Colours')
             ]
@@ -1122,19 +1136,20 @@ plot_options_2d = [
                     id = 'colours_2d',
                     options=[
                             { 
-                             'label': 'normal', 
-                             'value': 'normal'
+                             "label": 'Standard', 
+                             "value": 'normal'
                             },
                             {
-                             'label': 'deuteranopia',
-                             'value': 'deut'
+                             "label": 'Deuteranopia',
+                             "value": 'deut'
                             },
                             {
-                             'label': 'protanopia', 
-                             'value': 'prot'
+                             "label": 'Protanopia', 
+                             "value": 'prot'
                             }
                     ],
                     style = {
+                             'textAlign' : 'center', 
                              'width' : '150%'
                     }, 
                     value='normal',
@@ -1151,10 +1166,9 @@ plot_options_2d = [
 
 plot_options_3d = [
         
-    html.H2(
+    html.H4(
         style = {
             'textAlign' : 'center', 
-            'fontFamily' : 'sans-serif'
         },
         children = 'Plot Options'
     ),
@@ -1181,7 +1195,6 @@ plot_options_3d = [
                     html.P(
                         style = {
                             'textAlign' : 'center', 
-                            'fontFamily' : 'sans-serif'
                         },
                         children = 'Lobe Colours'
                     )
@@ -1199,7 +1212,6 @@ plot_options_3d = [
                     html.P(
                         style = {
                             'textAlign' : 'center', 
-                            'fontFamily' : 'sans-serif'
                         },
                         children = 'Cutaway'
                     )
@@ -1219,16 +1231,16 @@ plot_options_3d = [
                         id = 'colours_3d',
                         options=[
                                 { 
-                                 'label': 'Yellow-Purple', 
-                                 'value': 'yp'
+                                 "label": 'Yellow-Purple', 
+                                 "value": 'yp'
                                 },
                                 {
-                                 'label': 'Red-Blue',
-                                 'value': 'rb'
+                                 "label": 'Red-Blue',
+                                 "value": 'rb'
                                 },
                                 {
-                                 'label': 'Green-Orange', 
-                                 'value': 'go'
+                                 "label": 'Green-Orange', 
+                                 "value": 'go'
                                 }
                         ],
                         style = {}, 
@@ -1249,21 +1261,20 @@ plot_options_3d = [
                     dcc.RadioItems(id = 'cutaway_in', 
                         style = {
                             'textAlign' : 'center',
-                            'fontFamily' : 'sans-serif',
                             'display': 'block'
                         },
                         options=[
                             {
-                             'label': 'None', 
-                             'value': 1.0
+                             "label": 'None', 
+                             "value": 1.0
                             },
                             # {
-                            #  'label': '1/4',
-                            #  'value': 0.5
+                            #  "label": '1/4',
+                            #  "value": 0.5
                             # },
                             {
-                             'label': '1/2',
-                             'value': 0.
+                             "label": '1/2',
+                             "value": 0.
                             },
                         ],
                         value=1.0,
@@ -1279,13 +1290,21 @@ plot_options_3d = [
 
 plot_save_options = [
 
-    html.H2(
+    html.H4(
         style = {
             'textAlign' : 'center', 
-            'fontFamily' : 'sans-serif'
         },
-        children = 'Save Options'
+        children = 'Save Options',
+        id = "save_options_header"
+
     ),
+    dbc.Tooltip(
+    "Use the camera button in the top right of the plot to save",
+    target="save_options_header",
+    style = {
+        'textAlign' : 'center', 
+    },
+        ),
         
     html.Div(
         className = "container", 
@@ -1309,7 +1328,6 @@ plot_save_options = [
                     html.P(
                         style = {
                             'textAlign' : 'center', 
-                            'fontFamily' : 'sans-serif'
                         },
                         children = 'Output Height'
                     ),
@@ -1327,7 +1345,6 @@ plot_save_options = [
                     html.P(
                         style = {
                             'textAlign' : 'center', 
-                            'fontFamily' : 'sans-serif'
                             },
                         children = 'Output Width'
                     ),
@@ -1344,12 +1361,12 @@ plot_save_options = [
                 },
                 children=[
                     dcc.Input(
-                        id = 'plot_height_in',
+                        id = 'save_height_in',
                         placeholder=500,
                         type='number',
                         value=500,
                         style = {
-                            'width':'35%'
+                            'width':'70%'
                         }
                     )
                 ]
@@ -1370,7 +1387,7 @@ plot_save_options = [
                         type='number',
                         value=700,
                         style = {
-                            'width':'35%'
+                            'width':'70%'
                         }
                     )
                 ]
@@ -1389,22 +1406,22 @@ plot_save_options = [
                         id = 'save_format',
                         options=[
                                 { 
-                                 'label': 'svg', 
-                                 'value': 'svg'
+                                 "label": 'svg', 
+                                 "value": 'svg'
                                 },
                                 {
-                                 'label': 'png',
-                                 'value': 'png'
+                                 "label": 'png',
+                                 "value": 'png'
                                 },
                                 {
-                                 'label': 'jpeg', 
-                                 'value': 'jpeg'
+                                 "label": 'jpeg', 
+                                 "value": 'jpeg'
                                 }
                         ],
                         style = {
                                  'width' : '130%'
                         }, 
-                        value='png',
+                        value='svg',
                         searchable=False,
                         clearable=False
                     )
@@ -1422,7 +1439,6 @@ plot_save_options = [
                     html.P(
                         style = {
                             'textAlign' : 'center', 
-                            'fontFamily' : 'sans-serif'
                         },
                         children = 'Output Format'
                     ),
@@ -1475,7 +1491,7 @@ orb_tab = [
                         },
                         children=[
                             html.Div(
-                                id        = 'plot_options_box_2d', 
+                                id        = 'orb_options_2d', 
                                 style     = {}, 
                                 children  = plot_options_2d
                             ),
@@ -1490,7 +1506,7 @@ orb_tab = [
                         },
                         children=[
                             html.Div(
-                                id        = 'plot_options_box_3d', 
+                                id        = 'orb_options_3d', 
                                 style     = {}, 
                                 children  = plot_options_3d
                             ),
@@ -1529,22 +1545,10 @@ orb_tab = [
 # Layout of webpage
 app.layout = html.Div(children=[
 
-html.Title(
-    children='orbiplot'
-),
+navbar,
 
-html.Div(
-    style = {'background-color': '#3977AF'},
-    children = [
-        html.H1(
-            style = {
-                'textAlign'  : 'center',
-                'fontFamily' : 'sans-serif',
-                'color'      : 'white'
-            },
-            children = 'Orbiplot'
-        )
-    ]
+html.Title(
+    children='Waveplot'
 ),
 
 html.Div(
@@ -1578,45 +1582,7 @@ html.Div(
                     )
                 ]
             ),
-            dcc.Tabs(
-                id='options-tab',
-                children=[
-                    dcc.Tab(
-                        style ={
-                        'fontFamily'      : 'sans-serif',
-                        },
-                        selected_style ={
-                        'fontFamily'      : 'sans-serif',
-                        },
-                        label='Orbitals', 
-                        value='orb_tab', 
-                        children = orb_tab
-                    ),
-                    dcc.Tab(
-                        style ={
-                        'fontFamily'      : 'sans-serif',
-                        },
-                        selected_style ={
-                        'fontFamily'      : 'sans-serif',
-                        },
-                        label='Vibrations/Rotations', 
-                        value='vib_tab', 
-                        children = html.Div(style = {'fontFamily'      : 'sans-serif'},children=[html.H1(['Coming soon...'])])
-                    ),
-                    dcc.Tab(
-                        style ={
-                        'fontFamily'      : 'sans-serif',
-                        },
-                        selected_style ={
-                        'fontFamily'      : 'sans-serif',
-                        },
-                        label='Translations', 
-                        value='trans_tab', 
-                        children = html.Div(style = {'fontFamily'      : 'sans-serif'},children=[html.H1(['Coming soon...'])])
-                    ),
-                ],
-                value='orb_tab'
-            ),
+            html.Div(children=orb_tab),
         ]
     ),
 html.Footer(
@@ -1642,11 +1608,9 @@ html.Footer(
         )
     ]
 ),
-refresh_plots,
-mathjax_script
 ])
 
-def toggle_pob(on_off) :
+def toggle_pob(wf_type) :
 
     if on_off == 'on' :
         return {
@@ -1659,6 +1623,10 @@ def toggle_pob(on_off) :
             'borderWidth' : '0px',
             'textAlign' : 'center'
         }
+    elif on_off == None:
+        return {
+            'display' : 'none' , 
+        }     
     else :
         return {
             'display' : 'none' , 
@@ -1671,176 +1639,377 @@ def toggle_pob(on_off) :
             'textAlign' : 'center'
         }
 
-def orb_checklist(dimension):
-    if dimension == '2d':
-        return[
-            {'label': '1s', 'value': '1s'},
-            {'label': '2s', 'value': '2s'},
-            {'label': '3s', 'value': '3s'},
-            {'label': '4s', 'value': '4s'},
-            {'label': '5s', 'value': '5s'},
-            {'label': '6s', 'value': '6s'},
-            {'label': '2p', 'value': '2p'},
-            {'label': '3p', 'value': '3p'},
-            {'label': '4p', 'value': '4p'},
-            {'label': '5p', 'value': '5p'},
-            {'label': '6p', 'value': '6p'},
-            {'label': '3d', 'value': '3d'},
-            {'label': '4d', 'value': '4d'},
-            {'label': '5d', 'value': '5d'},
-            {'label': '6d', 'value': '6d'},
-            {'label': '4f', 'value': '4f'},
-            {'label': '5f', 'value': '5f'},
-            {'label': '6f', 'value': '6f'},
+
+def orb_options_2d(wf_type) :
+
+    if "3" in wf_type:
+        options = {
+            'display' : 'none' , 
+        }
+    else:
+        options =  {
+            'display' : 'inline-block' , 
+            'padding-left':'5%', 
+            'padding-bottom':'5%' , 
+            'padding-right':'5%', 
+            'width' : '90%', 
+            'borderStyle' : 'solid', 
+            'borderWidth' : '0px',
+            'textAlign' : 'center'
+        }   
+
+
+    return options
+
+def orb_options_3d(wf_type) :
+
+
+    if "3" in wf_type:
+        options = {
+            'display' : 'inline-block' , 
+            'padding-left':'5%', 
+            'padding-bottom':'5%' , 
+            'padding-right':'5%', 
+            'width' : '90%', 
+            'borderStyle' : 'solid', 
+            'borderWidth' : '0px',
+            'textAlign' : 'center'
+        }
+    else:
+        options =  {
+            'display' : 'none' , 
+        }   
+
+    return options
+
+def orb_checklist(wf_type):
+
+
+    if "3" in wf_type:
+        checklist = [
+            {"label": "1s", "value": "1s"},
+            {"label": "2s", "value": "2s"},
+            {"label": "3s", "value": "3s"},
+            {"label": "4s", "value": "4s"},
+            {"label": "5s", "value": "5s"},
+            {"label": "6s", "value": "6s"},
+            {"label": "2p", "value": "2p"},
+            {"label": "3p", "value": "3p"},
+            {"label": "4p", "value": "4p"},
+            {"label": "5p", "value": "5p"},
+            {"label": "6p", "value": "6p"},
+            {"label": "3dz²", "value": "3d_z2"},
+            {"label": "4dz²", "value": "4d_z2"},
+            {"label": "5dz²", "value": "5d_z2"},
+            {"label": "6dz²", "value": "6d_z2"},
+            {"label": "3dxy", "value": "3dxy"},
+            {"label": "4dxy", "value": "4dxy"},
+            {"label": "5dxy", "value": "5dxy"},
+            {"label": "6dxy", "value": "6dxy"},
+            {"label": "4fz³", "value": "4fz3"},
+            {"label": "5fz³", "value": "5fz3"},
+            {"label": "6fz³", "value": "6fz3"},
+            {"label": "4fxyz", "value": "4fxyz"},
+            {"label": "5fxyz", "value": "5fxyz"},
+            {"label": "6fxyz", "value": "6fxyz"},
+            {"label": "4fyz²", "value": "4fyz2"},
+            {"label": "5fyz²", "value": "5fyz2"},
+            {"label": "6fyz²", "value": "6fyz2"},
+        ]
+    else:
+        checklist = [
+            {"label": "1s", "value": "1s"},
+            {"label": "2s", "value": "2s"},
+            {"label": "3s", "value": "3s"},
+            {"label": "4s", "value": "4s"},
+            {"label": "5s", "value": "5s"},
+            {"label": "6s", "value": "6s"},
+            {"label": "2p", "value": "2p"},
+            {"label": "3p", "value": "3p"},
+            {"label": "4p", "value": "4p"},
+            {"label": "5p", "value": "5p"},
+            {"label": "6p", "value": "6p"},
+            {"label": "3d", "value": "3d"},
+            {"label": "4d", "value": "4d"},
+            {"label": "5d", "value": "5d"},
+            {"label": "6d", "value": "6d"},
+            {"label": "4f", "value": "4f"},
+            {"label": "5f", "value": "5f"},
+            {"label": "6f", "value": "6f"},
         ]
 
-    elif dimension == '3d':
-        return[
-            {'label': '1s', 'value': '1s'},
-            {'label': '2s', 'value': '2s'},
-            {'label': '3s', 'value': '3s'},
-            {'label': '4s', 'value': '4s'},
-            {'label': '5s', 'value': '5s'},
-            {'label': '6s', 'value': '6s'},
-            {'label': '2p', 'value': '2p'},
-            {'label': '3p', 'value': '3p'},
-            {'label': '4p', 'value': '4p'},
-            {'label': '5p', 'value': '5p'},
-            {'label': '6p', 'value': '6p'},
-            {'label': '3dz²', 'value': '3d_z2'},
-            {'label': '4dz²', 'value': '4d_z2'},
-            {'label': '5dz²', 'value': '5d_z2'},
-            {'label': '6dz²', 'value': '6d_z2'},
-            {'label': '3dxy', 'value': '3dxy'},
-            {'label': '4dxy', 'value': '4dxy'},
-            {'label': '5dxy', 'value': '5dxy'},
-            {'label': '6dxy', 'value': '6dxy'},
-            {'label': '4fz³', 'value': '4fz3'},
-            {'label': '5fz³', 'value': '5fz3'},
-            {'label': '6fz³', 'value': '6fz3'},
-            {'label': '4fxyz', 'value': '4fxyz'},
-            {'label': '5fxyz', 'value': '5fxyz'},
-            {'label': '6fxyz', 'value': '6fxyz'},
-            {'label': '4fyz²', 'value': '4fyz2'},
-            {'label': '5fyz²', 'value': '5fyz2'},
-            {'label': '6fyz²', 'value': '6fyz2'},
-        ]
+    return checklist
+
+
 ##################################################################################################################################
 ########################################################### Callbacks ############################################################
 ##################################################################################################################################
 
 
-#Callback which defines what changes ('figure') and what causes the change (Checkbox being pressed)
+#Callback which defines what changes (e.g. the plot) and what causes 
+# the change (e.g. a checkbox being pressed)
+
+orbitals_input = [ddep.Input('orb_checklist', "value"),
+               ddep.Input('function_type', "value"), 
+               ddep.Input('linewidth_slider',"value"), 
+               ddep.Input('text_size_slider',"value"), 
+               ddep.Input('gridlines',"value"), 
+               ddep.Input('upper_x_in', "value"),
+               ddep.Input('lower_x_in', "value"),
+               ddep.Input('save_format', "value"), 
+               ddep.Input('save_height_in', "value"),
+               ddep.Input('plot_width_in', "value"),
+               ddep.Input('colours_2d',"value"),
+               ddep.Input('colours_3d',"value"),
+               ddep.Input('cutaway_in',"value")]
+
 @app.callback([ddep.Output('plot_area', 'figure'),
                ddep.Output('plot_area', 'config'),
-               ddep.Output('plot_options_box_2d', 'style'),
-               ddep.Output('plot_options_box_3d', 'style'),
-               ddep.Output('OrbCheck', 'options')],
-              [ddep.Input('OrbCheck', 'value'),
-               ddep.Input('function_type', 'value'), 
-               ddep.Input('linewidth_slider','value'), 
-               ddep.Input('text_size_slider','value'), 
-               ddep.Input('xgridcheck','value'), 
-               ddep.Input('ygridcheck','value'), 
-               ddep.Input('upper_x_in', 'value'),
-               ddep.Input('lower_x_in', 'value'),
-               ddep.Input('save_format', 'value'), 
-               ddep.Input('plot_height_in', 'value'),
-               ddep.Input('plot_width_in', 'value'),
-               ddep.Input('colours_2d','value'),
-               ddep.Input('colours_3d','value'),
-               ddep.Input('cutaway_in','value')])
+               ddep.Output('orb_options_2d', 'style'),
+               ddep.Output('orb_options_3d', 'style'),
+               ddep.Output('orb_checklist', 'options')],
+               orbitals_input
+              )
 
-#Function which is called after the element is pressed
-def UpdatePlot(Orbitals, function_type, Thickness, TextSize, xgridinput,
-               ygridinput, upperxlim, lowerxlim,PlotFormat,
-               PlotHeight, PlotWidth,colour_name_2d, colour_name_3d, cutaway):
+def update_app(orbitals, wf_type, linewidth, text_size, gridlines,
+               x_up, x_low, save_format, save_height, save_width, 
+               colours_2d, colours_3d, cutaway):
+    """
+    Updates the app, given the current state of the UI
+    All inputs correspond (in the same order) to the list 
+    of ddep.Input a few lines above^^^
 
-    # If xlims nonetype then set to default
-    if lowerxlim == None:
-        lowerxlim = 0
+    Input:
+        orbitals (list, string)   :: names of orbitals
+        wf_type (string)          :: type of wf 
+        linewidth (float)         :: linewidth for 2d plot
+        text_size (float)         :: plot label text size for 2d plot
+        gridlines (list, string)  :: yes or no to gridlines on either axis
+        x_up (float)              :: upper x limit for 2d plot
+        x_low (float)             :: lower x limit for 2d plot
+        save_format (string)      :: save format for plot
+        save_height (float)       :: height of saved image
+        save_width  (float)       :: width of saved image
+        colour_2d (string)        :: colour style for 2d plot
+        colour_3d (string)        :: colour style for 3d plot
+        cutaway (float)           :: controls 3d slicing of orbitals
 
-    if upperxlim == None:
-        upperxlim = lowerxlim + 80
+    Returns:
+        figure (dict)             :: dictionary item for list of go.XX objects
+        config (dict)             :: dictionary item for go.layout object, e.g. linewidth, colormap...
+        2d_options_box (dict)     :: dictionary of style options for 2d plot UI input area
+        3d_options_box (dict)     :: dictionary of style options for 3d plot UI input area
+        orb_checklist  (dict)     :: dictionary of dictionaries containing label value pairs for orbitals checkbox
 
-    #Read type of wavefunction being requested and set axis names
-    if function_type == 'RDF':
-        WFFlag = 1
-        WFName = r'$\text{Radial Distribution Function}  \ \ \ 4\pi r^2 R(r)^2$'
-        file_name = 'radial_distribution_functions'
-    if function_type == 'RWF':
-        WFFlag = 2
-        WFName = r'$\text{Radial Wavefunction}  \ \ \ R(r) $\n'
-        file_name = 'radial_wavefunctions'
-    if function_type == '3DWF':
-        WFFlag = 3
-        WFName = ''
+    """
 
-    # Plot radial wavefunction or radial distribution function
-    if WFFlag == 2 or WFFlag == 1:
-        return {
-            'data': radial_2d(Orbitals, max(lowerxlim,0), max(upperxlim,0), WFFlag, Thickness),
-            'layout': ax_config_2d(xgridinput, ygridinput, TextSize, WFName, lowerxlim, upperxlim)
-        }, modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name), toggle_pob('on'), toggle_pob('off'), orb_checklist('2d')
+    return [orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_3d, cutaway, gridlines, text_size),
+    orb_modebar(save_format, save_height, save_width, wf_type, orbitals),
+    orb_options_2d(wf_type), 
+    orb_options_3d(wf_type), 
+    orb_checklist(wf_type)]
 
-    # Plot wavefunction isosurface
-    # use first selection
-    if WFFlag == 3 :
-        if len(Orbitals) > 0:
+def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colour_name, cutaway, gridlines, text_size):
 
-            fig = make_subplots(rows=1, cols=1,
-                                specs=[[{'is_3d': True}]]
-                               )
+    # Nothing to plot - exit
+    if len(orbitals) == 0:
+        output = {
+            'data'   : None,
+            'layout' : ax_null()
+            }
+        return output
 
-            fig, upper, lower = orbitals_3d(Orbitals[0], colour_name_3d, fig, np.float(cutaway))
+    # Set limits to default if needed
+    if x_low == None or x_low < 0:
+        x_low = 0
+    if x_up == None:
+        x_up = x_low + 100
 
-            fig.update_layout(ax_config_3d(upper, lower))
+    #Turn on x axis gridlines
+    if 'x' in gridlines:
+        x_grid = True
+    else:
+        x_grid = False
 
-            return  fig,modebar_config(PlotFormat, PlotHeight, PlotWidth, Orbitals[0]+' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
-        else:
-            return {
-                'data'   : None,
-                'layout' : ax_config_3d()
-            }, modebar_config(PlotFormat, PlotHeight, PlotWidth, ' Orbital'), toggle_pob('off'), toggle_pob('on'), orb_checklist('3d')
+    #Turn on y axis gridlines
+    if 'y' in gridlines:
+        y_grid = True
+    else:
+        y_grid = False
 
+    y_labels = {
+        "RDF" : r'$\text{Radial Distribution Function}  \ \ \ 4\pi r^2 R(r)^2$',
+        "RWF" : r'$\text{Radial Wavefunction}  \ \ \ R(r) $\n'
+    }
 
-def radial_2d(Orbitals, lowerxlim, upperxlim, WFFlag, Thickness):
+    if "3" in wf_type:
+        data, x_up, x_low = orb_plot_3d(orbitals[0], colour_name, cutaway)
+        layout = orb_ax_3d(x_up, x_low)
+    else:
+        layout = orb_ax_2d(y_labels[wf_type], text_size, x_grid, y_grid, x_up, x_low)
+        data = orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth)
+
+    output = {
+        "data" : data,
+        "layout" : layout
+    }
+
+    return output
+
+def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth):
 
     traces = []
-    if len(Orbitals) == 0: return
 
     curr_ymax = 0.
-    x = np.linspace(lowerxlim,upperxlim,1000)
+    x = np.linspace(x_low,x_up,1000)
 
     # Plot each requested function
-    for it in range(0,len(Orbitals)):
+    for orbital in orbitals:
         # Get orbital n value and name
-        n, l = get_orb_name(Orbitals[it])
+        n, l = name_to_qn(orbital)
 
         if l == 's':
-            y = plot_radial_s(n, x, WFFlag)
+            y = calc_radial_s(n, x, wf_type)
 
         elif l == 'p':
-            y = plot_radial_p(n, x, WFFlag)
+            y = calc_radial_p(n, x, wf_type)
 
         elif l == 'd':  
-            y = plot_radial_d(n, x, WFFlag)
+            y = calc_radial_d(n, x, wf_type)
 
         elif l == 'f':
-            y = plot_radial_f(n, x, WFFlag)
+            y = calc_radial_f(n, x, wf_type)
 
         traces.append(go.Scatter(
             x = x,
             y = y,
-            line = dict(width = Thickness),
-            name = Orbitals[it], 
+            line = dict(width = linewidth),
+            name = orbital,
             hoverinfo = 'none')
         )
 
     return traces
 
-def ax_config_3d(upper=0, lower=0):
-    return go.Layout(
+
+def orb_plot_3d(orb_name, colour_name, cutaway):
+    """
+    Plots isosurfaces of atomic orbitals
+
+    Input:
+        orb_name (string)       :: name of orbital
+        colour_name (string)    :: name of colour palette
+        cutaway (float)         :: % of orbital to keep/plot
+    Returns:
+        data (plotly go object) :: plotly fig object with new graph added
+        upper (float)           :: upper bound of all axis limits 
+        lower (float)           :: lower bound of all axis limits 
+    """
+
+    # Get colours of lobes
+    colours = set_3d_colour(colour_name)
+    
+    # Get orbital n value and name
+    n, l = name_to_qn(orb_name)
+
+    if l == 's':
+
+        x, y, z, wav, upper, lower, ival = calc_s_orb(n, cutaway)
+
+    elif l == 'p':
+
+        data, upper, lower= plot_p_orb(n, cutaway, colours)
+
+    elif l == 'd':  
+
+        if 'xy' in orb_name:
+
+            x, y, z, wav, upper, lower, ival = calc_dxy_orb(n, cutaway)
+
+        else:
+
+            x, y, z, wav, upper, lower, ival = calc_dz_orb(n, cutaway)
+
+    elif l == 'f':
+
+        if 'xyz' in orb_name:
+
+            x, y, z, wav, upper, lower, ival = calc_fxyz_orb(n, cutaway)
+
+
+        elif 'yz2' in orb_name:
+
+            x, y, z, wav, upper, lower, ival = calc_fyz2_orb(n, cutaway)
+
+        else:
+
+            x, y, z, wav, upper, lower, ival = calc_fz_orb(n, cutaway)
+
+    if l != "p":
+
+        data = go.Isosurface(
+            x=x.flatten(),
+            y=y.flatten(),
+            z=z.flatten(),
+            value=wav.flatten(),
+            isomin=-ival,
+            isomax=ival,
+            flatshading=False,
+            caps=dict(x_show=False, y_show=False, z_show=False),
+            showscale=False,
+            colorscale=colours
+            )
+
+    return [data], upper, lower
+
+def orb_ax_2d(y_label, text_size, x_grid, y_grid, x_up, x_low):
+
+    layout = go.Layout(
+                xaxis = {
+                    'autorange' : True,
+                    'showgrid'  : x_grid,
+                    'zeroline'  : False,
+                    'showline'  : True,
+                    'range'     : [x_low, x_up],
+                    'title' : {
+                        'text' : r"$\mathrm{Distance} \ (a_0)$",
+                        'font' :{'size' : text_size} 
+                    },
+                    'ticks' :'outside',
+                    'tickfont' :{'size' : text_size},
+                    'showticklabels' : True
+                },
+                yaxis = {
+                    'autorange'  : True,
+                    'showgrid'   : y_grid,
+                    'zeroline'   : False,
+                    'fixedrange' : True,
+                    'title' :{
+                        'text' : y_label,
+                        'font' :{
+                            'size' : text_size
+                        }
+                    },
+                    'title_standoff' : 100,
+                    'showline' :True,
+                    'ticks' :'outside',
+                    'tickfont' :{'size' : text_size},
+                    'showticklabels' :True
+                },
+                legend = {
+                    'x' : 0.8,
+                    'y' : 1,
+                    'font' :{
+                        'size' : text_size - 3
+                    }
+                },
+                margin=dict(l=90, r=30, t=30, b=60),
+    )
+
+    return layout
+
+def orb_ax_3d(upper=0, lower=0):
+
+    layout = go.Layout(
         hovermode=False,
         dragmode="orbit",
         scene_aspectmode='cube',
@@ -1891,111 +2060,80 @@ def ax_config_3d(upper=0, lower=0):
         margin=dict(l=20, r=30, t=30, b=20),
     )
 
-def ax_config_2d(xgridinput, ygridinput, TextSize, WFName, xlow, xup):
+    return layout
 
-    #Turn on x axis gridlines
-    if xgridinput == ['xgridval']:
-        xgrid = True
-    else:
-        xgrid = False
+def ax_null():
 
-    #Turn on y axis gridlines
-    if ygridinput == ['ygridval']:
-        ygrid = True
-    else:
-        ygrid = False
+    #Turn off axis gridlines
 
     return go.Layout(
                      xaxis = {
                               'autorange' : True,
-                              'showgrid'  : xgrid,
+                              'showgrid'  : False,
                               'zeroline'  : False,
-                              'showline'  : True,
-                              'range'     : [xlow, xup],
-                              'title' : {
-                                         'text' : r"$\mathrm{Distance} \ (a_0)$",
-                                         'font' :
-                                                 {
-                                                  'size' : TextSize
-                                                 } 
-                                        },
-                              'ticks' :'outside',
-                              'tickfont' : 
-                                           {
-                                            'size' : TextSize
-                                           },
-                              'showticklabels' : True
+                              'showline'  : False,
+                              'range'     : [0, 1],
+                              'showticklabels' : False
                              },
                      yaxis = {
                               'autorange' :True,
-                              'showgrid' :ygrid,
+                              'showgrid' :False,
                               'zeroline' :False,
-                              'fixedrange' : True,
-                              'title' : 
-                                        {
-                                         'text' : WFName,
-                                         'font' : 
-                                                  {
-                                                   'size' : TextSize
-                                                  }
-                                        },
-                              'title_standoff' : 100,
-                              'showline' :True,
-                              'ticks' :'outside',
-                              'tickfont' : 
-                                          {
-                                           'size' : TextSize
-                                          },
-                              'showticklabels' :True
+                              'showline' :False,
+                              'showticklabels' :False
                              },
-                     legend = {
-                               'x' : 0.8,
-                               'y' : 1,
-                               'font' : 
-                                       {
-                                        'size' : TextSize - 3
-                                       }
-                              },
                      margin=dict(l=90, r=30, t=30, b=60),
     )
 
-def modebar_config(PlotFormat, PlotHeight, PlotWidth, file_name):
 
-    return  {
-            'toImageButtonOptions': 
-              {
-              'format': PlotFormat, 
-              'filename': file_name,
-              'height': PlotHeight,
-              'width': PlotWidth,
-              }, 
-            'modeBarButtonsToRemove':
-                [
-                'sendDataToCloud',
-                'autoScale2d',
-                'resetScale2d',
-                'hoverClosestCartesian',
-                'toggleSpikelines',
-                'zoom2d',
-                'zoom3d',
-                'pan3d',
-                'pan2d',
-                'select2d',
-                'zoomIn2d',
-                'zoomOut2d',
-                'hovermode',
-                'resetCameraLastSave3d', 
-                'hoverClosest3d',
-                'hoverCompareCartesian',
-                'resetViewMapbox',
-                'orbitRotation', 
-                'tableRotation',
-                'resetCameraDefault3d'
-                ],
-            'displaylogo': False,
-            'displayModeBar' : True,
-            }
+def orb_modebar(save_format, save_height, save_width, wf_type, orbitals):
 
+    # No plot, no modebar
+    if len(orbitals) == 0:
+        options = {"displayModeBar" : False}
+        return options
+
+    if "RDF" in wf_type:
+        file_name = "radial_distribution_function"
+    elif "RWF" in wf_type:
+        file_name = "radial_wavefunction"
+    elif "3DWF" in wf_type:
+        file_name = "{}_orbital".format(orbitals[0])
+
+    options = {
+        'toImageButtonOptions':{
+            'format': save_format, 
+            'filename': file_name,
+            'height': save_height,
+            'width': save_width,
+        }, 
+        'modeBarButtonsToRemove':[
+            'sendDataToCloud',
+            'autoScale2d',
+            'resetScale2d',
+            'hoverClosestCartesian',
+            'toggleSpikelines',
+            'zoom2d',
+            'zoom3d',
+            'pan3d',
+            'pan2d',
+            'select2d',
+            'zoomIn2d',
+            'zoomOut2d',
+            'hovermode',
+            'resetCameraLastSave3d', 
+            'hoverClosest3d',
+            'hoverCompareCartesian',
+            'resetViewMapbox',
+            'orbitRotation', 
+            'tableRotation',
+            'resetCameraDefault3d'
+        ],
+        'displaylogo': False,
+        'displayModeBar' : True,
+    }
+
+    return options
 
 
 if __name__ == '__main__':
