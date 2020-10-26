@@ -1,21 +1,16 @@
 #! /usr/bin/env python3
 
-import numpy as np
-import os
-import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash.dependencies as ddep
 import dash_defer_js_import as dji
+import plotly.colors as pc
 import plotly.graph_objs as go
+import numpy as np
+import os
 
-app = dash.Dash(__name__, 
-    external_stylesheets=["https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"],
-    external_scripts=['https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'])
-####################################################################################################
-####################################### Radial Functions ###########################################
-####################################################################################################
+from app import app
 
 def p_z_ax(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
@@ -244,7 +239,7 @@ def set_3d_colour(colour_name):
 
     elif colour_name == 'rb':
 
-        colours = [[0, 'rgb(12,116,235)'], [1, 'rgb(255,0,0)']]
+        colours = [[0, 'rgb(0,90,181)'], [1, 'rgb(220,50,32)']]
 
     return colours
 
@@ -772,48 +767,52 @@ app.index_string = r'''
 '''
 
 navbar = dbc.NavbarSimple(
+    id = "navbar",
     children=[
-        dbc.NavItem(dbc.NavLink("Orbitals", href="#", )),
-        dbc.NavItem(dbc.NavLink("Vibrations", href="#")),
-        dbc.NavItem(dbc.NavLink("Translations", href="#")),
+        dbc.NavItem(dbc.NavLink(id= "orb_tab", children = "Orbitals", href="/apps/app1", active=True)),
+        dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2")),
+        dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3")),
     ],
     brand="Waveplot",
-    brand_href="#",
+    brand_href="/apps/app1",
     color="primary",
     dark=True,
 )
 
-orbital_plot_options = [html.Div(
-    className = "container", 
-    style = {
-        'display' : 'grid',
-        'grid-template-columns': r'50% 50%',
-        'grid-template-rows' : r'50% 50%'
-        },
-    children=[
-        html.Div(className = "item", 
-            style = {
-                'grid-column-start': '1',
-                'grid-column-end': '2',
-                'grid-row-start': '1',
-                'grid-row-end': '2'
-            },
-            children=[
-                html.H4(
+orb_graph = dcc.Graph(
+                    id='plot_area', 
+                    style = {
+                        'responsive' : 'true',
+                        'height' : '580px',
+                        'automargin' : 'true'
+                    }
+                )
+
+orb_select = [dbc.Row(children =[
+        dbc.Col(
+            html.Div(
+                children=html.H4(
                     style = {
                         'textAlign' : 'center', 
                         },
                     children = 'Orbital'
-                ),
-            ]
+                )
+            )
         ),
+        dbc.Col(
+            html.Div(
+                children=html.H4(
+                    style = {
+                        'textAlign' : 'center', 
+                        },
+                    children = 'Function'
+                )
+            )
+        ),
+    ]),
+dbc.Row([
+    dbc.Col(
         html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '1',
-                'grid-column-end': '2',
-                'grid-row-start': '2',
-                'grid-row-end': '3'},
             children=[
                 dcc.Dropdown(id = 'orb_checklist', 
                     style = {
@@ -842,33 +841,12 @@ orbital_plot_options = [html.Div(
                     value=['2p'],
                     multi=True, # browser autocomplete needs to be killed here, when they implement it
                     placeholder = "Orbital..."
-                ),
+                )
             ]
-        ),
-        html.Div(className = "item", 
-            style = {
-                'grid-column-start': '2',
-                'grid-column-end': '3',
-                'grid-row-start': '1',
-                'grid-row-end': '2'
-            },
-            children=[
-                html.H4(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Function'
-                ),
-            ]
-        ),
+        )
+    ),
+    dbc.Col(
         html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '2',
-                'grid-column-end': '3',
-                'grid-row-start': '2',
-                'grid-row-end': '3'
-            },
             children=[
                 dcc.Dropdown(
                     id = 'function_type', 
@@ -896,115 +874,156 @@ orbital_plot_options = [html.Div(
                 )
             ]
         )
-    ]
-)]
+    )
+])]
 
-
-plot_options_2d = [
-                
-    html.H4(
-        style = {
-            'textAlign' : 'center', 
-        },
-        children = 'Plot Options'),
-    html.Div(
-        className = "container", 
-        style = {
-            'display' : 'grid',
-            'grid-template-columns': r'33% 33% 33%',
-            'grid-template-rows' : r'25% 25% 25% 25%'
-        },
-        children=[
-            html.Div(
-                className = "item", 
+orb_save = [
+    dbc.Row([
+        dbc.Col([
+            html.H4(
                 style = {
-                    'grid-column-start': '1',
-                    'grid-column-end': '2',
-                    'grid-row-start': '1',
-                    'grid-row-end': '2'
+                    'textAlign' : 'center', 
                 },
-                children=[
-                    html.P(
-                        style = {
-                            'textAlign' : 'center', 
-                        },
-                        children = 'Gridlines'
-                    ),
-                ]
+                children = 'Save Options',
+                id = "save_options_header"
             ),
-        html.Div(className = "item", 
-            style = {
-                'grid-column-start': '2',
-                'grid-column-end': '3',
-                'grid-row-start': '1',
-                'grid-row-end': '2'},
-            children=[
+            dbc.Tooltip(
+                children="Use the camera button in the top right of the plot to save",
+                target="save_options_header",
+                style = {
+                    'textAlign' : 'center', 
+                },
+            )
+        ])
+    ]),
+    dbc.Row(
+        [
+            dbc.Col(
+                        html.P(
+                            style = {
+                                'textAlign' : 'center', 
+                            },
+                            children = 'Output height'
+                        )
+                    ),
+            dbc.Col(
+                        html.P(
+                            style = {
+                                'textAlign' : 'center', 
+                            },
+                            children = 'Output width'
+                        )
+                    ),
+            dbc.Col(
+                        html.P(
+                            style = {
+                                'textAlign' : 'center', 
+                            },
+                            children = 'Save format'
+                        )
+                    ),
+        ]
+    ),
+    dbc.Row(
+        [
+            dbc.Col(
+                dbc.Input(
+                    id = 'save_height_in',
+                    placeholder=500,
+                    type='number',
+                    value=500
+                )
+            ),
+            dbc.Col(
+                dbc.Input(
+                    id = 'save_width_in',
+                    placeholder=500,
+                    type='number',
+                    value=500
+                )
+            ),
+            dbc.Col(
+                dcc.Dropdown(
+                    id = 'save_format',
+                    options=[
+                        { 
+                         "label": 'svg', 
+                         "value": 'svg'
+                        },
+                        {
+                         "label": 'png',
+                         "value": 'png'
+                        },
+                        {
+                         "label": 'jpeg', 
+                         "value": 'jpeg'
+                        }
+                    ],
+                    value='svg',
+                    searchable=False,
+                    clearable=False
+                )
+            ),
+        ]
+    ),
+    ]
+
+orb_customise_2d = [
+    dbc.Row(
+        dbc.Col(
+                html.H4(
+                    style = {'textAlign' : 'center'},
+                    children = 'Plot Options')
+                )
+    ),
+    dbc.Row(
+        [
+            dbc.Col(
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                    },
+                    children = 'Gridlines'
+                )
+            ),
+            dbc.Col(
                 html.P(
                     style = {
                         'textAlign' : 'center', 
                     },
                     children = 'Lower x limit'
-                ),
-            ]
-        ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '3',
-                'grid-column-end': '4',
-                'grid-row-start': '1',
-                'grid-row-end': '2'
-            },
-            children=[
+                )
+            ),
+            dbc.Col(
                 html.P(
                     style = {
                         'textAlign' : 'center', 
-                        },
-                    children = 'Upper x limit'
-                ),
-            ]
-        ),
-        html.Div(
-            className = "container", 
-            style = {
-                'display' : 'grid',
-                'grid-template-columns': r'100%',
-                'grid-template-rows' : r'40% 60%'
-            },
-            children=[
-                html.Div(
-                    className = "item", 
-                    style = {
-                        'grid-column-start': '1',
-                        'grid-column-end': '2',
-                        'grid-row-start': '1',
-                        'grid-row-end': '2'
                     },
-                    children=[
-                        dcc.Checklist(
-                            id = 'gridlines',
-                            style = {
-                                'textAlign' : 'center', 
-                            },
-                            options=[
-                                {"label": ' x-Axis ', "value": 'x'},
-                                {"label": ' y-Axis ', "value": 'y'}
-                            ],
-                            value=[],
-                        )
-                    ]
-                ),
-                ]
+                    children = 'Upper x limit'
+                )
+            )
+        ]
+    ),
+    dbc.Row(children=
+        [
+            dbc.Col(
+                dcc.Checklist(
+                    id = 'gridlines',
+                    style = {
+                        'textAlign' : 'center', 
+                        'verticalAlign': 'middle',
+                        'horizontalAlign': 'middle'
+                    },
+                    options=[
+                        {"label": ' x', "value": 'x'},
+                        {"label": ' y', "value": 'y'}
+                    ],
+                    labelStyle={"display":"block"},
+                    value=[],
+                )
             ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '2',
-                'grid-column-end': '3',
-                'grid-row-start': '2',
-                'grid-row-end': '3'},
-            children=[
-                dcc.Input(
+            dbc.Col(
+                dbc.Input(
                     id = 'lower_x_in',
                     placeholder = 0,
                     type = 'number',
@@ -1012,58 +1031,60 @@ plot_options_2d = [
                     max = 100,
                     value = 0,
                     style = {
-                        'width':'40%'
+                        # 'width' : '50%',
+                        'textAlign' : 'center', 
+                        'verticalAlign': 'middle',
+                        'horizontalAlign': 'middle'
                     }
-                ),
-            ]
-        ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '3',
-                'grid-column-end': '4',
-                'grid-row-start': '2',
-                'grid-row-end': '3'
-            },
-            children=[
-                dcc.Input(
+                )
+            ),
+            dbc.Col(
+                dbc.Input(
                     id = 'upper_x_in',
                     placeholder = 100,
-                    type='number',
+                    type = 'number',
                     max = 100,
                     value = 100,
                     style = {
-                        'width':'40%'
+                        'textAlign' : 'center', 
+                        'verticalAlign': 'middle',
+                        'horizontalAlign': 'middle'
                     }
-                ),
-            ]
-        ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '1',
-                'grid-column-end': '2',
-                'grid-row-start': '3',
-                'grid-row-end': '4'
-            },
-            children=[
+                )
+            )
+        ]
+    ),
+    dbc.Row(
+        [
+            dbc.Col(
                 html.P(
                     style = {
                         'textAlign' : 'center', 
                     },
-                    children = 'Line Width'
+                    children = 'Line width'
                 )
-            ]
-        ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '1',
-                'grid-column-end': '2',
-                'grid-row-start': '4',
-                'grid-row-end': '5'
-            },
-            children=[
+            ),
+            dbc.Col(
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                    },
+                    children = 'Text size'
+                )
+            ),
+            dbc.Col(
+                html.P(
+                    style = {
+                        'textAlign' : 'center', 
+                    },
+                    children = 'Plot colours'
+                )
+            )
+        ]
+    ),
+    dbc.Row(
+        [
+            dbc.Col(
                 dcc.Slider(
                     id = 'linewidth_slider',
                     min=1,
@@ -1071,67 +1092,17 @@ plot_options_2d = [
                     step=0.5,
                     value=5,
                 )
-            ]
-        ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '2',
-                'grid-column-end': '3',
-                'grid-row-start': '3',
-                'grid-row-end': '4'
-            },
-            children=[
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Text Size'
-                )
-            ]
-        ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '2',
-                'grid-column-end': '3',
-                'grid-row-start': '4',
-                'grid-row-end': '5'},
-            children=[
+            ),
+            dbc.Col(
                 dcc.Slider(
                     id = 'text_size_slider',
                     min=15,
                     max=25,
                     step=0.5,
                     value=19,
-                    )
-                ]
-                ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '3',
-                'grid-column-end': '4',
-                'grid-row-start': '3',
-                'grid-row-end': '4'},
-            children=[
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Plot Colours')
-            ]
-        ),
-        html.Div(
-            className = "item", 
-            style = {
-                'grid-column-start': '3',
-                'grid-column-end': '4',
-                'grid-row-start': '4',
-                'grid-row-end': '5',
-                'width' : '50%'
-            },
-            children=[
+                )
+            ),
+            dbc.Col(
                 dcc.Dropdown(
                     id = 'colours_2d',
                     options=[
@@ -1140,33 +1111,25 @@ plot_options_2d = [
                              "value": 'normal'
                             },
                             {
-                             "label": 'Deuteranopia',
-                             "value": 'deut'
+                             "label": 'Tol',
+                             "value": 'tol'
                             },
                             {
-                             "label": 'Protanopia', 
-                             "value": 'prot'
+                             "label": 'Wong', 
+                             "value": 'wong'
                             }
                     ],
-                    style = {
-                             'textAlign' : 'center', 
-                             'width' : '150%'
-                    }, 
                     value='normal',
                     searchable=False,
                     clearable=False
                 )
-            ]
-        )
+            ),
+        ]
+    )
+]
 
-    ]
-)]
-
-
-
-plot_options_3d = [
-        
-    html.H4(
+orb_customise_3d = [ 
+            html.H4(
         style = {
             'textAlign' : 'center', 
         },
@@ -1260,12 +1223,13 @@ plot_options_3d = [
                 children=[
                     dcc.RadioItems(id = 'cutaway_in', 
                         style = {
-                            'textAlign' : 'center',
-                            'display': 'block'
+                            'textAlign' : 'center', 
+                            'verticalAlign': 'middle',
+                            'horizontalAlign': 'middle'
                         },
                         options=[
                             {
-                             "label": 'None', 
+                             "label": '  None', 
                              "value": 1.0
                             },
                             # {
@@ -1273,325 +1237,49 @@ plot_options_3d = [
                             #  "value": 0.5
                             # },
                             {
-                             "label": '1/2',
+                             "label": '  1/2',
                              "value": 0.
                             },
                         ],
                         value=1.0,
-                        labelStyle={
-                                    'float':'left'
-                        }
+                        labelStyle={"display":"block"}
                     )
                 ]
             )
 
-        ]
-    )]
-
-plot_save_options = [
-
-    html.H4(
-        style = {
-            'textAlign' : 'center', 
-        },
-        children = 'Save Options',
-        id = "save_options_header"
-
-    ),
-    dbc.Tooltip(
-    "Use the camera button in the top right of the plot to save",
-    target="save_options_header",
-    style = {
-        'textAlign' : 'center', 
-    },
-        ),
-        
-    html.Div(
-        className = "container", 
-        style = {
-            'display' : 'grid',
-            'grid-template-columns' : r'33% 33% 33%',
-            'grid-template-rows' : r'50% 50%',
-            'justify-items' : 'center',
-            'align-items' : 'center'
-        },
-        children=[
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '1',
-                    'grid-column-end': '2',
-                    'grid-row-start': '1',
-                    'grid-row-end': '2'
-                },
-                children=[
-                    html.P(
-                        style = {
-                            'textAlign' : 'center', 
-                        },
-                        children = 'Output Height'
-                    ),
-                ]
-            ),
-            html.Div(
-                className = "item", 
-                style = {
-                         'grid-column-start': '2',
-                         'grid-column-end': '3',
-                         'grid-row-start': '1',
-                         'grid-row-end': '2'
-                         },
-                children=[
-                    html.P(
-                        style = {
-                            'textAlign' : 'center', 
-                            },
-                        children = 'Output Width'
-                    ),
-                ]
-            ),
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '1',
-                    'grid-column-end': '2',
-                    'grid-row-start': '2',
-                    'grid-row-end': '3',
-                    'padding-left': '40%',
-                },
-                children=[
-                    dcc.Input(
-                        id = 'save_height_in',
-                        placeholder=500,
-                        type='number',
-                        value=500,
-                        style = {
-                            'width':'70%'
-                        }
-                    )
-                ]
-            ),
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '2',
-                    'grid-column-end': '3',
-                    'grid-row-start': '2',
-                    'grid-row-end': '3',
-                    'padding-left': '40%',
-                },
-                children=[
-                    dcc.Input(
-                        id = 'plot_width_in',
-                        placeholder=700,
-                        type='number',
-                        value=700,
-                        style = {
-                            'width':'70%'
-                        }
-                    )
-                ]
-            ),
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '3',
-                    'grid-column-end': '4',
-                    'grid-row-start': '2',
-                    'grid-row-end': '3',
-                    'justify-self':'center'
-                },
-                children=[                                 
-                    dcc.Dropdown(
-                        id = 'save_format',
-                        options=[
-                                { 
-                                 "label": 'svg', 
-                                 "value": 'svg'
-                                },
-                                {
-                                 "label": 'png',
-                                 "value": 'png'
-                                },
-                                {
-                                 "label": 'jpeg', 
-                                 "value": 'jpeg'
-                                }
-                        ],
-                        style = {
-                                 'width' : '130%'
-                        }, 
-                        value='svg',
-                        searchable=False,
-                        clearable=False
-                    )
-                ]
-            ),
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '3',
-                    'grid-column-end': '4',
-                    'grid-row-start': '1',
-                    'grid-row-end': '2'
-                },
-                children=[                                 
-                    html.P(
-                        style = {
-                            'textAlign' : 'center', 
-                        },
-                        children = 'Output Format'
-                    ),
-                ]
-            )
-        ]
-    )]
-
-orb_tab = [
-
-    html.Div(className = "item", 
-        style = {
-            'grid-column-start': '2',
-            'grid-column-end': '3',
-            'grid-row-start': '1',
-            'grid-row-end': '2'
-        },
-        children=[
-            html.Div(
-                className = "container", 
-                style = { 
-                    'display' : 'grid',
-                    'grid-template-columns': r'100%',
-                    'margin': 'auto',
-                    'justify-content':'stretch',
-                    'align-self':'center'
-                },
-                children=[
-                    html.Div(className = "item", 
-                        style = {
-                            'grid-column-start': '1',
-                            'grid-column-end': '2',
-                            'grid-row-start': '1',
-                            'grid-row-end': '2',
-                        },
-                        children=[
-                            html.Div(
-                                id        = 'orbitals box', 
-                                style     = {}, 
-                                children  = orbital_plot_options
-                            ),
-                        ]
-                    ),
-                    html.Div(className = "item", 
-                        style = {
-                            'grid-column-start': '1',
-                            'grid-column-end': '2',
-                            'grid-row-start': '2',
-                            'grid-row-end': '3',
-                        },
-                        children=[
-                            html.Div(
-                                id        = 'orb_options_2d', 
-                                style     = {}, 
-                                children  = plot_options_2d
-                            ),
-                        ]
-                    ),
-                    html.Div(className = "item", 
-                        style = {
-                            'grid-column-start': '1',
-                            'grid-column-end': '2',
-                            'grid-row-start': '2',
-                            'grid-row-end': '3',
-                        },
-                        children=[
-                            html.Div(
-                                id        = 'orb_options_3d', 
-                                style     = {}, 
-                                children  = plot_options_3d
-                            ),
-                        ]
-                    ),
-                    html.Div(
-                        className = "item", 
-                        style = {
-                            'grid-column-start': '1',
-                            'grid-column-end': '2',
-                            'grid-row-start': '3',
-                            'grid-row-end': '4',
-                        },
-                        children=[
-                            html.Div(
-                                className = 'Save Options Box', 
-                                style = {}, 
-                                children  = plot_save_options
-                            )
-                        ]
-                    )
-                ]
-            )
         ]
     )
-
-
-
-
 ]
 
-##################################################################
-########################## Webpage Main ##########################
-##################################################################
 
-# Layout of webpage
-app.layout = html.Div(children=[
-
-navbar,
-
-html.Title(
-    children='Waveplot'
-),
-
-html.Div(
-        className = "container", 
-        style = {
-            'display' : 'grid',
-            'grid-template-columns': r'50% 50%',
-            'grid-template-rows' : r'100%',
-            'margin': 'auto',
-            'width' : '95%'
-        },
-        children=[
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '1',
-                    'grid-column-end': '2',
-                    'grid-row-start': '1',
-                    'grid-row-end': '2',
-                    'justify-self': 'stretch',
-                    'align-self': 'stretch'
-                },
-                children=[
-                    dcc.Graph(
-                        id='plot_area', 
-                        style = {
-                            'responsive' : 'true',
-                            'height' : '580px',
-                            'automargin' : 'true'
-                        }
-                    )
-                ]
-            ),
-            html.Div(children=orb_tab),
-        ]
+orb_customise = [
+    html.Div(
+        id = "orb_customise_2d",
+        children = orb_customise_2d,
+        style = {}
     ),
-html.Footer(
+    html.Div(
+        id = "orb_customise_3d",
+        children = orb_customise_3d,
+        style = {}
+    )]
+            
+
+orb_options = orb_select + orb_customise + orb_save
+
+orb_body = dbc.Row(
+    [
+        dbc.Col(orb_graph),
+        dbc.Col(orb_options),
+    ]
+)
+
+footer = html.Footer(
     style = {
         'textAlign'       : 'center', 
-        'fontFamily'      : 'sans-serif',
         'font-size'       : 'smaller',
         'color'           : 'white',
-        'background-color': '#3977AF'
+        'background-color': '#307cf6'
     }, 
     children=[
         html.P(
@@ -1607,8 +1295,20 @@ html.Footer(
             children = 'https://www.kragskow.com/'
         )
     ]
-),
-])
+)
+
+##################################################################
+########################## Webpage Main ##########################
+##################################################################
+
+# Layout of webpage
+layout = html.Div(
+    children=[
+        navbar,
+        orb_body,
+        footer,
+    ]
+)
 
 def toggle_pob(wf_type) :
 
@@ -1640,47 +1340,31 @@ def toggle_pob(wf_type) :
         }
 
 
-def orb_options_2d(wf_type) :
+def orb_customise_2d(wf_type) :
 
+    #3D
     if "3" in wf_type:
-        options = {
-            'display' : 'none' , 
-        }
+        style = {'display' : 'none' , }
+
+    # 2D
     else:
-        options =  {
-            'display' : 'inline-block' , 
-            'padding-left':'5%', 
-            'padding-bottom':'5%' , 
-            'padding-right':'5%', 
-            'width' : '90%', 
-            'borderStyle' : 'solid', 
-            'borderWidth' : '0px',
-            'textAlign' : 'center'
-        }   
+        style = {}
 
 
-    return options
+    return style
 
-def orb_options_3d(wf_type) :
+def orb_customise_3d(wf_type) :
 
-
+    #3D
     if "3" in wf_type:
-        options = {
-            'display' : 'inline-block' , 
-            'padding-left':'5%', 
-            'padding-bottom':'5%' , 
-            'padding-right':'5%', 
-            'width' : '90%', 
-            'borderStyle' : 'solid', 
-            'borderWidth' : '0px',
-            'textAlign' : 'center'
-        }
-    else:
-        options =  {
-            'display' : 'none' , 
-        }   
+        style = {}
 
-    return options
+    # 2D
+    else:
+        style = {'display' : 'none' , }
+
+
+    return style
 
 def orb_checklist(wf_type):
 
@@ -1741,9 +1425,9 @@ def orb_checklist(wf_type):
     return checklist
 
 
-##################################################################################################################################
-########################################################### Callbacks ############################################################
-##################################################################################################################################
+##################################################################
+############################ Callback ############################
+##################################################################
 
 
 #Callback which defines what changes (e.g. the plot) and what causes 
@@ -1758,15 +1442,15 @@ orbitals_input = [ddep.Input('orb_checklist', "value"),
                ddep.Input('lower_x_in', "value"),
                ddep.Input('save_format', "value"), 
                ddep.Input('save_height_in', "value"),
-               ddep.Input('plot_width_in', "value"),
+               ddep.Input('save_width_in', "value"),
                ddep.Input('colours_2d',"value"),
                ddep.Input('colours_3d',"value"),
                ddep.Input('cutaway_in',"value")]
 
 @app.callback([ddep.Output('plot_area', 'figure'),
                ddep.Output('plot_area', 'config'),
-               ddep.Output('orb_options_2d', 'style'),
-               ddep.Output('orb_options_3d', 'style'),
+               ddep.Output('orb_customise_2d', 'style'),
+               ddep.Output('orb_customise_3d', 'style'),
                ddep.Output('orb_checklist', 'options')],
                orbitals_input
               )
@@ -1797,19 +1481,19 @@ def update_app(orbitals, wf_type, linewidth, text_size, gridlines,
     Returns:
         figure (dict)             :: dictionary item for list of go.XX objects
         config (dict)             :: dictionary item for go.layout object, e.g. linewidth, colormap...
-        2d_options_box (dict)     :: dictionary of style options for 2d plot UI input area
-        3d_options_box (dict)     :: dictionary of style options for 3d plot UI input area
+        orb_customise_2d (dict)   :: dictionary of style options for 2d plot UI input area
+        orb_customise_3d (dict)   :: dictionary of style options for 2d plot UI input area
         orb_checklist  (dict)     :: dictionary of dictionaries containing label value pairs for orbitals checkbox
 
     """
 
-    return [orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_3d, cutaway, gridlines, text_size),
+    return [orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size),
     orb_modebar(save_format, save_height, save_width, wf_type, orbitals),
-    orb_options_2d(wf_type), 
-    orb_options_3d(wf_type), 
+    orb_customise_2d(wf_type), 
+    orb_customise_3d(wf_type), 
     orb_checklist(wf_type)]
 
-def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colour_name, cutaway, gridlines, text_size):
+def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size):
 
     # Nothing to plot - exit
     if len(orbitals) == 0:
@@ -1839,15 +1523,17 @@ def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colour_name, cutaway, gri
 
     y_labels = {
         "RDF" : r'$\text{Radial Distribution Function}  \ \ \ 4\pi r^2 R(r)^2$',
+        #"RDF" : 'Radial Distribution Function 4πr²R(r)²',
         "RWF" : r'$\text{Radial Wavefunction}  \ \ \ R(r) $\n'
+        #"RWF" : 'Radial Wavefunction R(r)'
     }
 
     if "3" in wf_type:
-        data, x_up, x_low = orb_plot_3d(orbitals[0], colour_name, cutaway)
+        data, x_up, x_low = orb_plot_3d(orbitals[0], colours_3d, cutaway)
         layout = orb_ax_3d(x_up, x_low)
     else:
         layout = orb_ax_2d(y_labels[wf_type], text_size, x_grid, y_grid, x_up, x_low)
-        data = orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth)
+        data = orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d)
 
     output = {
         "data" : data,
@@ -1856,7 +1542,42 @@ def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colour_name, cutaway, gri
 
     return output
 
-def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth):
+def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
+
+    # Define colour lists
+    # Paul Tol list of colourblindness friendly colours
+    # https://personal.sron.nl/~pault/
+    tol_cols = [
+        'rgb(0  , 0  , 0)',
+        'rgb(230, 159, 0)',
+        'rgb(86 , 180, 233)',
+        'rgb(0  , 158, 115)',
+        'rgb(240, 228, 66)',
+        'rgb(0  , 114, 178)',
+        'rgb(213, 94 , 0)',
+        'rgb(204, 121, 167)'
+    ]
+    # Bang wong list of colourblindness friendly colours
+    # https://www.nature.com/articles/nmeth.1618
+    wong_cols = [
+        'rgb(51 , 34 , 136)',
+        'rgb(17 , 119, 51)',
+        'rgb(68 , 170, 153)',
+        'rgb(136, 204, 238)',
+        'rgb(221, 204, 119)',
+        'rgb(204, 102, 119)',
+        'rgb(170, 68 , 153)',
+        'rgb(136, 34 , 85)'
+    ]
+    # Default list of colours is plotly's safe colourlist
+    def_cols = pc.qualitative.Safe
+
+    if colours_2d == 'tol':
+        cols = tol_cols + wong_cols + def_cols
+    elif colours_2d == 'wong':
+        cols = wong_cols + def_cols + tol_cols
+    else:
+        cols = def_cols + tol_cols + wong_cols
 
     traces = []
 
@@ -1864,7 +1585,7 @@ def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth):
     x = np.linspace(x_low,x_up,1000)
 
     # Plot each requested function
-    for orbital in orbitals:
+    for it, orbital in enumerate(orbitals):
         # Get orbital n value and name
         n, l = name_to_qn(orbital)
 
@@ -1880,12 +1601,15 @@ def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth):
         elif l == 'f':
             y = calc_radial_f(n, x, wf_type)
 
-        traces.append(go.Scatter(
-            x = x,
-            y = y,
-            line = dict(width = linewidth),
-            name = orbital,
-            hoverinfo = 'none')
+        traces.append(
+            go.Scatter(
+                x = x,
+                y = y,
+                line = dict(width = linewidth),
+                name = orbital,
+                hoverinfo = 'none',
+                marker={"color":cols[it]}
+            )
         )
 
     return traces
@@ -1972,6 +1696,7 @@ def orb_ax_2d(y_label, text_size, x_grid, y_grid, x_up, x_low):
                     'range'     : [x_low, x_up],
                     'title' : {
                         'text' : r"$\mathrm{Distance} \ (a_0)$",
+                        #"text" : 'Distance (a₀)',
                         'font' :{'size' : text_size} 
                     },
                     'ticks' :'outside',
@@ -2134,8 +1859,3 @@ def orb_modebar(save_format, save_height, save_width, wf_type, orbitals):
     }
 
     return options
-
-
-if __name__ == '__main__':
-
-    app.run_server(debug=True, port=8053)

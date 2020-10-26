@@ -1,16 +1,20 @@
 #! /usr/bin/env python3
 
+import numpy as np
+import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash.dependencies as ddep
 import dash_defer_js_import as dji
-import plotly.colors as pc
 import plotly.graph_objs as go
-import numpy as np
-import os
 
-from app import app
+app = dash.Dash(__name__, 
+    external_stylesheets=["https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"],
+    external_scripts=['https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'])
+####################################################################################################
+####################################### Radial Functions ###########################################
+####################################################################################################
 
 def p_z_ax(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
@@ -239,7 +243,7 @@ def set_3d_colour(colour_name):
 
     elif colour_name == 'rb':
 
-        colours = [[0, 'rgb(0,90,181)'], [1, 'rgb(220,50,32)']]
+        colours = [[0, 'rgb(12,116,235)'], [1, 'rgb(255,0,0)']]
 
     return colours
 
@@ -767,11 +771,10 @@ app.index_string = r'''
 '''
 
 navbar = dbc.NavbarSimple(
-    id = "navbar",
     children=[
-        dbc.NavItem(dbc.NavLink(id= "orb_tab", children = "Orbitals", href="/apps/app1", active=True)),
-        dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2")),
-        dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3")),
+        dbc.NavItem(dbc.NavLink("Orbitals", href="#", )),
+        dbc.NavItem(dbc.NavLink("Vibrations", href="#")),
+        dbc.NavItem(dbc.NavLink("Translations", href="#")),
     ],
     brand="Waveplot",
     brand_href="#",
@@ -1136,12 +1139,12 @@ plot_options_2d = [
                              "value": 'normal'
                             },
                             {
-                             "label": 'Tol',
-                             "value": 'tol'
+                             "label": 'Deuteranopia',
+                             "value": 'deut'
                             },
                             {
-                             "label": 'Wong', 
-                             "value": 'wong'
+                             "label": 'Protanopia', 
+                             "value": 'prot'
                             }
                     ],
                     style = {
@@ -1539,7 +1542,7 @@ orb_tab = [
 ##################################################################
 
 # Layout of webpage
-layout = html.Div(children=[
+app.layout = html.Div(children=[
 
 navbar,
 
@@ -1799,13 +1802,13 @@ def update_app(orbitals, wf_type, linewidth, text_size, gridlines,
 
     """
 
-    return [orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size),
+    return [orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_3d, cutaway, gridlines, text_size),
     orb_modebar(save_format, save_height, save_width, wf_type, orbitals),
     orb_options_2d(wf_type), 
     orb_options_3d(wf_type), 
     orb_checklist(wf_type)]
 
-def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size):
+def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colour_name, cutaway, gridlines, text_size):
 
     # Nothing to plot - exit
     if len(orbitals) == 0:
@@ -1839,11 +1842,11 @@ def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, c
     }
 
     if "3" in wf_type:
-        data, x_up, x_low = orb_plot_3d(orbitals[0], colours_3d, cutaway)
+        data, x_up, x_low = orb_plot_3d(orbitals[0], colour_name, cutaway)
         layout = orb_ax_3d(x_up, x_low)
     else:
         layout = orb_ax_2d(y_labels[wf_type], text_size, x_grid, y_grid, x_up, x_low)
-        data = orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d)
+        data = orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth)
 
     output = {
         "data" : data,
@@ -1852,37 +1855,7 @@ def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, c
 
     return output
 
-def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
-
-    # Load colours
-    tol_cols = [
-        'rgb(0  , 0  , 0)',
-        'rgb(230, 159, 0)',
-        'rgb(86 , 180, 233)',
-        'rgb(0  , 158, 115)',
-        'rgb(240, 228, 66)',
-        'rgb(0  , 114, 178)',
-        'rgb(213, 94 , 0)',
-        'rgb(204, 121, 167)'
-    ]
-    wong_cols = [
-        'rgb(51 , 34 , 136)',
-        'rgb(17 , 119, 51)',
-        'rgb(68 , 170, 153)',
-        'rgb(136, 204, 238)',
-        'rgb(221, 204, 119)',
-        'rgb(204, 102, 119)',
-        'rgb(170, 68 , 153)',
-        'rgb(136, 34 , 85)'
-    ]
-    def_cols = pc.qualitative.Safe
-
-    if colours_2d == 'tol':
-        cols = tol_cols + wong_cols + def_cols
-    elif colours_2d == 'wong':
-        cols = wong_cols + def_cols + tol_cols
-    else:
-        cols = def_cols + tol_cols + wong_cols
+def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth):
 
     traces = []
 
@@ -1890,7 +1863,7 @@ def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
     x = np.linspace(x_low,x_up,1000)
 
     # Plot each requested function
-    for it, orbital in enumerate(orbitals):
+    for orbital in orbitals:
         # Get orbital n value and name
         n, l = name_to_qn(orbital)
 
@@ -1906,15 +1879,12 @@ def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
         elif l == 'f':
             y = calc_radial_f(n, x, wf_type)
 
-        traces.append(
-            go.Scatter(
-                x = x,
-                y = y,
-                line = dict(width = linewidth),
-                name = orbital,
-                hoverinfo = 'none',
-                marker={"color":cols[it]}
-            )
+        traces.append(go.Scatter(
+            x = x,
+            y = y,
+            line = dict(width = linewidth),
+            name = orbital,
+            hoverinfo = 'none')
         )
 
     return traces
@@ -2163,3 +2133,8 @@ def orb_modebar(save_format, save_height, save_width, wf_type, orbitals):
     }
 
     return options
+
+
+if __name__ == '__main__':
+
+    app.run_server(debug=True, port=8053)

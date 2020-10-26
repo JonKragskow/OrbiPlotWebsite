@@ -13,11 +13,11 @@ navbar = dbc.NavbarSimple(
     id = "navbar",
     children=[
         dbc.NavItem(dbc.NavLink(id= "orb_tab", children = "Orbitals", href="/apps/app1")),
-        dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2",active=True)),
-        dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3")),
+        dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2")),
+        dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3",active=True)),
     ],
     brand="Waveplot",
-    brand_href="#",
+    brand_href="/apps/app1",
     color="primary",
     dark=True,
 )

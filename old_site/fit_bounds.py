@@ -18,7 +18,7 @@ def radial_p(Orb,r):
 
 def radial_d(Orb,r): 
     # !!! Radial Wavefunctions of d orbitals
-    if Orb == '3d_z2': 
+    if Orb == '3dxy': 
         return 1./(9.*np.sqrt(30.))
 
     if Orb == '4d_z2':
@@ -39,7 +39,7 @@ def d_z_ax_neg(n,r,f,c):
 def p_z(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
 
-def s_func(n,r,f,c)
+def s_func(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
 
 def bound_fun_s(r, Orb, c):
@@ -68,28 +68,47 @@ def bound_fun_dz2_neg(r, Orb, c):
 
     return np.nan_to_num(r**2 - d_z_ax_neg(n,r,radial_d(Orb,r),c)**2, 200000000000.)
 
+def bound_fun_dxy(r, Orb, c):
+
+    n = float(Orb[0])
+
+    ang = np.linspace(0, 2*np.pi, num = 200)
+
+    #Calculate g(r)
+    g_r = r**2. - c * float(n)**2. * np.exp(r/float(n)) * np.sqrt(np.pi/15.) / np.abs(radial_d(Orb,r))
+
+
+    return g_r
+
+    #x = np.sqrt(g_r/2.)*np.cos(ang)
+    #z = np.sqrt(g_r)*np.sin(ang)
+    
+    #return r**2. - x**2. - z**2.
+
 
 fig, (ax) = plt.subplots( 1, 1)
+
 
 # dz2 orbital r domains
 
 c = 0.0003
-orb = '1s'
-n = float(Orb[0])
+orb = '3dxy'
+n = float(orb[0])
 tolerance = 0.000000000000001
 
-val_1 = 0.5
-sol_1 = optimize.root_scalar(bound_fun_s, x0 = val_1, x1 = val_1+0.01, args = (orb, c), xtol = tolerance)
+val_1 = 28
+sol_1 = optimize.root_scalar(bound_fun_dxy, x0 = val_1, x1 = val_1+0.01, args = (orb, c), xtol = tolerance)
 
-# print(sol_1, '\n')
-# print(sol_2)
-r = np.arange(58.47034306, 58.47034307, 0.000000000001)
+print(sol_1, '\n')
+exit()
+
+r = np.arange(0, 100, 0.1)
  
 cv = 58.470343060020994
 print(cv)
-print(d_z_ax_neg(n,cv,radial_d(orb,cv),c))
+print(bound_fun_dxy(n,cv,radial_d(orb,cv),c))
 #Calculate z(r)
-z_of_r_neg = d_z_ax_neg(n,r,radial_d(orb,r),c)
+z_of_r_neg = bound_fun_dxy(n,r,radial_d(orb,r),c)
 
 subprocess.run(["rm", "outfile"])
 
@@ -97,7 +116,7 @@ np.savetxt('outfile', np.transpose(np.vstack((r,z_of_r_neg))))
 
 exit()
 
-output = np.nan_to_num(r**2 - d_z_ax_neg(n,r,radial_d(orb,r),c)**2, 20000.)
+output = np.nan_to_num(r**2 - bound_fun_dxy(n,r,radial_d(orb,r),c)**2, 20000.)
 
 ax.plot(r, np.zeros(np.size(r)))
 ax.plot(r, output)
