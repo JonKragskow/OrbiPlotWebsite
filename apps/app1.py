@@ -254,6 +254,7 @@ def name_to_qn(orb):
         n (integer)  :: principal quantum number
         l (integer)  :: azimuthal quantum number
     """
+    print(orb, flush=True)
     n = int(orb[0])
     l = orb[1]
 
@@ -789,28 +790,8 @@ orb_graph = dbc.Spinner(children = dcc.Graph(
                     }
                 ), size = 'lg', color='primary', type='border', fullscreen = True)
 
-orb_select = [dbc.Row([
-                dbc.Col(
-                    html.H4(
-                        style = {
-                            'textAlign' : 'center', 
-                            },
-                        children = 'Orbital'
-                    )
-                ),
-                dbc.Col(
-                    html.H4(
-                        style = {
-                            'textAlign' : 'center', 
-                            },
-                        children = 'Function'
-                    )
-                )
-        ]),
-    dbc.Row([
-        dbc.Col(
-            children=[
-                dcc.Dropdown(id = 'orb_checklist', 
+
+orb_select_2d = dcc.Dropdown(id = 'orb_select_2d', 
                     style = {
                         'textAlign' : 'left'
                     },
@@ -837,6 +818,78 @@ orb_select = [dbc.Row([
                     value=['2p'],
                     multi=True, # browser autocomplete needs to be killed here, when they implement it
                     placeholder = "Orbital..."
+                )
+
+orb_select_3d = dcc.Dropdown(id = 'orb_select_3d', 
+                    style = {
+                        'textAlign' : 'left'
+                    },
+                    options=[
+                        {"label": "1s", "value": "1s"},
+                        {"label": "2s", "value": "2s"},
+                        {"label": "3s", "value": "3s"},
+                        {"label": "4s", "value": "4s"},
+                        {"label": "5s", "value": "5s"},
+                        {"label": "6s", "value": "6s"},
+                        {"label": "2p", "value": "2p"},
+                        {"label": "3p", "value": "3p"},
+                        {"label": "4p", "value": "4p"},
+                        {"label": "5p", "value": "5p"},
+                        {"label": "6p", "value": "6p"},
+                        {"label": "3dz²", "value": "3d_z2"},
+                        {"label": "4dz²", "value": "4d_z2"},
+                        {"label": "5dz²", "value": "5d_z2"},
+                        {"label": "6dz²", "value": "6d_z2"},
+                        {"label": "3dxy", "value": "3dxy"},
+                        {"label": "4dxy", "value": "4dxy"},
+                        {"label": "5dxy", "value": "5dxy"},
+                        {"label": "6dxy", "value": "6dxy"},
+                        {"label": "4fz³", "value": "4fz3"},
+                        {"label": "5fz³", "value": "5fz3"},
+                        {"label": "6fz³", "value": "6fz3"},
+                        {"label": "4fxyz", "value": "4fxyz"},
+                        {"label": "5fxyz", "value": "5fxyz"},
+                        {"label": "6fxyz", "value": "6fxyz"},
+                        {"label": "4fyz²", "value": "4fyz2"},
+                        {"label": "5fyz²", "value": "5fyz2"},
+                        {"label": "6fyz²", "value": "6fyz2"},
+                    ],
+                    value=[],
+                    multi=False, # browser autocomplete needs to be killed here, when they implement it
+                    placeholder = "Orbital..."
+                )
+
+
+orb_select = [dbc.Row([
+                dbc.Col(
+                    html.H4(
+                        style = {
+                            'textAlign' : 'center', 
+                            },
+                        children = 'Orbital'
+                    )
+                ),
+                dbc.Col(
+                    html.H4(
+                        style = {
+                            'textAlign' : 'center', 
+                            },
+                        children = 'Function'
+                    )
+                )
+        ]),
+    dbc.Row([
+        dbc.Col(
+            children=[
+                html.Div(
+                    id = "orb_select_2d_container",
+                    children = orb_select_2d,
+                    style = {}
+                ),
+                html.Div(
+                    id = "orb_select_3d_container",
+                    children = orb_select_3d,
+                    style = {"display":None}
                 )
             ]
         ),
@@ -1307,7 +1360,7 @@ def toggle_pob(wf_type) :
         }
 
 
-def orb_customise_2d(wf_type) :
+def display_2d(wf_type) :
 
     #3D
     if "3" in wf_type:
@@ -1320,7 +1373,7 @@ def orb_customise_2d(wf_type) :
 
     return style
 
-def orb_customise_3d(wf_type) :
+def display_3d(wf_type) :
 
     #3D
     if "3" in wf_type:
@@ -1332,74 +1385,17 @@ def orb_customise_3d(wf_type) :
 
 
     return style
-
-def orb_checklist(wf_type):
-
-
-    if "3" in wf_type:
-        checklist = [
-            {"label": "1s", "value": "1s"},
-            {"label": "2s", "value": "2s"},
-            {"label": "3s", "value": "3s"},
-            {"label": "4s", "value": "4s"},
-            {"label": "5s", "value": "5s"},
-            {"label": "6s", "value": "6s"},
-            {"label": "2p", "value": "2p"},
-            {"label": "3p", "value": "3p"},
-            {"label": "4p", "value": "4p"},
-            {"label": "5p", "value": "5p"},
-            {"label": "6p", "value": "6p"},
-            {"label": "3dz²", "value": "3d_z2"},
-            {"label": "4dz²", "value": "4d_z2"},
-            {"label": "5dz²", "value": "5d_z2"},
-            {"label": "6dz²", "value": "6d_z2"},
-            {"label": "3dxy", "value": "3dxy"},
-            {"label": "4dxy", "value": "4dxy"},
-            {"label": "5dxy", "value": "5dxy"},
-            {"label": "6dxy", "value": "6dxy"},
-            {"label": "4fz³", "value": "4fz3"},
-            {"label": "5fz³", "value": "5fz3"},
-            {"label": "6fz³", "value": "6fz3"},
-            {"label": "4fxyz", "value": "4fxyz"},
-            {"label": "5fxyz", "value": "5fxyz"},
-            {"label": "6fxyz", "value": "6fxyz"},
-            {"label": "4fyz²", "value": "4fyz2"},
-            {"label": "5fyz²", "value": "5fyz2"},
-            {"label": "6fyz²", "value": "6fyz2"},
-        ]
-    else:
-        checklist = [
-            {"label": "1s", "value": "1s"},
-            {"label": "2s", "value": "2s"},
-            {"label": "3s", "value": "3s"},
-            {"label": "4s", "value": "4s"},
-            {"label": "5s", "value": "5s"},
-            {"label": "6s", "value": "6s"},
-            {"label": "2p", "value": "2p"},
-            {"label": "3p", "value": "3p"},
-            {"label": "4p", "value": "4p"},
-            {"label": "5p", "value": "5p"},
-            {"label": "6p", "value": "6p"},
-            {"label": "3d", "value": "3d"},
-            {"label": "4d", "value": "4d"},
-            {"label": "5d", "value": "5d"},
-            {"label": "6d", "value": "6d"},
-            {"label": "4f", "value": "4f"},
-            {"label": "5f", "value": "5f"},
-            {"label": "6f", "value": "6f"},
-        ]
-
-    return checklist
 
 
 ##################################################################
-############################ Callback ############################
+############################ Callbacks ###########################
 ##################################################################
 
 #Callback which defines what changes (e.g. the plot) and what causes 
 # the change (e.g. a checkbox being pressed)
 
-orbitals_input = [ddep.Input('orb_checklist', "value"),
+orbitals_input = [ddep.Input('orb_select_2d', "value"),
+               ddep.Input('orb_select_3d', "value"),
                ddep.Input('function_type', "value"), 
                ddep.Input('linewidth_slider',"value"), 
                ddep.Input('text_size_slider',"value"), 
@@ -1417,11 +1413,12 @@ orbitals_input = [ddep.Input('orb_checklist', "value"),
                ddep.Output('plot_area', 'config'),
                ddep.Output('orb_customise_2d', 'style'),
                ddep.Output('orb_customise_3d', 'style'),
-               ddep.Output('orb_checklist', 'options')],
+               ddep.Output('orb_select_2d_container', "style"),
+               ddep.Output('orb_select_3d_container', "style")],
                orbitals_input
               )
 
-def update_app(orbitals, wf_type, linewidth, text_size, gridlines,
+def update_app(orbitals_2d, orbitals_3d, wf_type, linewidth, text_size, gridlines,
                x_up, x_low, save_format, save_height, save_width, 
                colours_2d, colours_3d, cutaway):
     """
@@ -1448,18 +1445,29 @@ def update_app(orbitals, wf_type, linewidth, text_size, gridlines,
         figure (dict)             :: dictionary item for list of go.XX objects
         config (dict)             :: dictionary item for go.layout object, e.g. linewidth, colormap...
         orb_customise_2d (dict)   :: dictionary of style options for 2d plot UI input area
-        orb_customise_3d (dict)   :: dictionary of style options for 2d plot UI input area
-        orb_checklist  (dict)     :: dictionary of dictionaries containing label value pairs for orbitals checkbox
+        orb_customise_3d (dict)   :: dictionary of style options for 3d plot UI input area
+        orb_select_2d_container (dict)   :: dictionary of style options for 2d orbital selection container
+        orb_select_3d_container (dict)   :: dictionary of style options for 3d orbital selection container
 
     """
 
-    return [orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size),
-    orb_modebar(save_format, save_height, save_width, wf_type, orbitals),
-    orb_customise_2d(wf_type), 
-    orb_customise_3d(wf_type), 
-    orb_checklist(wf_type)]
+    return [orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size),
+    orb_modebar(save_format, save_height, save_width, wf_type, orbitals_2d, orbitals_3d),
+    display_2d(wf_type), 
+    display_3d(wf_type), 
+    display_2d(wf_type), 
+    display_3d(wf_type)]
 
-def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size):
+def orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size):
+
+    if "RDF" in wf_type:
+        orbitals = orbitals_2d
+    elif "RWF" in wf_type:
+        orbitals = orbitals_2d
+    elif "3DWF" in wf_type:
+        orbitals = orbitals_3d
+
+    print(wf_type, orbitals, flush=True)
 
     # Nothing to plot - exit
     if len(orbitals) == 0:
@@ -1493,7 +1501,7 @@ def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, c
     }
 
     if "3" in wf_type:
-        data, x_up, x_low = orb_plot_3d(orbitals[0], colours_3d, cutaway)
+        data, x_up, x_low = orb_plot_3d(orbitals, colours_3d, cutaway)
         layout = orb_ax_3d(x_up, x_low)
     else:
         layout = orb_ax_2d(y_labels[wf_type], text_size, x_grid, y_grid, x_up, x_low)
@@ -1779,19 +1787,24 @@ def ax_null():
     )
 
 
-def orb_modebar(save_format, save_height, save_width, wf_type, orbitals):
+def orb_modebar(save_format, save_height, save_width, wf_type, orbitals_2d, orbitals_3d):
 
+    if "RDF" in wf_type:
+        file_name = "radial_distribution_function"
+        orbitals = orbitals_2d
+    elif "RWF" in wf_type:
+        file_name = "radial_wavefunction"
+        orbitals = orbitals_2d
+    elif "3DWF" in wf_type:
+        orbitals = orbitals_3d
+        
     # No plot, no modebar
     if len(orbitals) == 0:
         options = {"displayModeBar" : False}
         return options
 
-    if "RDF" in wf_type:
-        file_name = "radial_distribution_function"
-    elif "RWF" in wf_type:
-        file_name = "radial_wavefunction"
-    elif "3DWF" in wf_type:
-        file_name = "{}_orbital".format(orbitals[0])
+    if "3DWF" in wf_type:
+        file_name = "{}_orbital".format(orbitals)
 
     options = {
         'toImageButtonOptions':{
