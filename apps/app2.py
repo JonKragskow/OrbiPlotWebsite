@@ -1,3 +1,4 @@
+import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -23,81 +24,96 @@ navbar = dbc.NavbarSimple(
     dark=True,
 )
 
-vib_tab = [
+vib_graph = dcc.Graph(
+                    id='vib_graph', 
+                    style = {
+                        'responsive' : 'true',
+                        'height' : '580px',
+                        'automargin' : 'true'
+                    }
+                )
 
-    html.Div(className = "item", 
-        style = {
-            'grid-column-start': '2',
-            'grid-column-end': '3',
-            'grid-row-start': '1',
-            'grid-row-end': '2'
-        },
-        children=[
-            dcc.Checklist(
-                id = 'vib_checklist',
-                style = {
-                    'textAlign' : 'center', 
-                },
-                options=[
-                    {"label": ' Plot ', "value": 'yes'}
+vib_options = [
+
+    dbc.Row(
+        [
+            dbc.Col(
+                children = [
+                    dbc.InputGroup(
+                        [
+                            dbc.InputGroupAddon("k", addon_type="prepend"),
+                            dbc.Input(id="fc_input", placeholder=100, value = 100, type = 'number', min = 0),
+                            dbc.InputGroupAddon(r"N m⁻¹", addon_type="append"),
+                        ]
+                    )
                 ],
-                value=[],
-            )        
-        ]
-    )
+                style={"height" : "100%"},
+                className="h-100"
+            ),
+            dbc.Col(
+                children = [
+                    dbc.Row([
+                        dbc.InputGroup(
+
+                            [
+                                dbc.DropdownMenu(
+                                    children = [
+                                        dbc.DropdownMenuItem("ω", id = "omega"),
+                                        dbc.DropdownMenuItem("𝜈", id = "nubar", style={"text-decoration": "overline"})
+                                    ],
+                                    id="freq_type",
+                                    label="ω",
+                                    addon_type="prepend"
+                                ),
+                                dbc.Input(id="freq_input", placeholder=100, type = 'number'),
+                                dbc.InputGroupAddon(r"cm⁻¹", addon_type="append"),
+                            ]
+                        )
+                    ]),
+                    ],
+                style={"height" : "100%"},
+                className="h-100"
+            ),
+        ],
+        className="h-100",
+    ),
+
+
 ]
 
-
-
-
-layout = html.Div(children=[
-
-navbar,
-
-html.Title(
-    children='Waveplot'
-),
-
-html.Div(
-        className = "container", 
-        style = {
-            'display' : 'grid',
-            'grid-template-columns': r'50% 50%',
-            'grid-template-rows' : r'100%',
-            'margin': 'auto',
-            'width' : '95%'
-        },
-        children=[
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '1',
-                    'grid-column-end': '2',
-                    'grid-row-start': '1',
-                    'grid-row-end': '2',
-                    'justify-self': 'stretch',
-                    'align-self': 'stretch'
-                },
-                children=[
-                    dcc.Graph(
-                        id='vib_plot_area', 
-                        style = {
-                            'responsive' : 'true',
-                            'height' : '580px',
-                            'automargin' : 'true'
-                        }
-                    )
-                ]
+vib_body = dbc.Container(
+    dbc.Row(
+        [
+            dbc.Col(vib_graph, style={"height" : "100%"},className="h-100"),
+            dbc.Col(
+                html.Div(
+                    style={
+                        "height": "400px",
+                        "width": "400px",
+                        "position" : "relative"},
+                    className='viewer_3Dmoljs',
+                    **{
+                        'data-pdb': '2POR',
+                        'data-backgroundcolor':'0xffffff',
+                        'data-style':'stick'
+                    }
+                    ,
+                    
+                )
             ),
-            html.Div(children=vib_tab),
-        ]
+            dbc.Col(vib_options, style={"height" : "100%"},className="h-100"),
+        ],
+        className="h-100",
     ),
-html.Footer(
+    style = {"height" : "100vh"}
+)
+
+footer = html.Footer(
     style = {
         'textAlign'       : 'center', 
         'font-size'       : 'smaller',
         'color'           : 'white',
-        'background-color': '#3977AF'
+        'background-color': '#307cf6'
     }, 
     children=[
         html.P(
@@ -113,22 +129,35 @@ html.Footer(
             children = 'https://www.kragskow.com/'
         )
     ]
-),
-])
+)
 
+##################################################################
+########################## Webpage Main ##########################
+##################################################################
 
-
+# Layout of webpage
+layout = html.Div(
+    children=[
+        navbar,
+        vib_body,
+        footer,
+    ]
+)
 
 @app.callback(
-        [
-        ddep.Output('vib_plot_area', 'figure')
-        ], 
-        [
-        ddep.Input('vib_checklist', "value")
-        ]
-    )
+    [
+        ddep.Output('vib_graph', 'figure'),
+        ddep.Output('freq_type', 'label')
+    ], 
+    [
+        ddep.Input("freq_input", "value"),
+        ddep.Input("fc_input", "value"),
+        ddep.Input("omega", "n_clicks"),
+        ddep.Input("nubar", "n_clicks"),
+    ]
+)
 
-def update_app(vib_checklist):
+def update_app(freq_input, fc_input, *args):
     """
     Updates the app, given the current state of the UI
     All inputs correspond (in the same order) to the list 
@@ -142,55 +171,39 @@ def update_app(vib_checklist):
         config (dict)             :: dictionary item for go.layout object, e.g. linewidth, colormap...
 
     """
+    ctx = dash.callback_context
 
-    return [vib_fig(vib_checklist)]
+    if not ctx.triggered:
+        button_id = "all"
+    else:
+        button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
-def vib_fig(vib_checklist):
+    if button_id == "omega":
+        freq = freq_input * 2*np.pi
+        button_label = ["ω"]
+    elif button_id == "nubar":
+        freq = freq_input
+        button_label = ["𝜈"]
+    else:
+        button_label = ["𝜈"]
 
+    x = np.linspace(-0.5*10**-10,0.5*10**-10,1000)
 
-    # Define colour lists
-    # Paul Tol list of colourblindness friendly colours
-    # https://personal.sron.nl/~pault/
-    tol_cols = [
-        'rgb(0  , 0  , 0)',
-        'rgb(230, 159, 0)',
-        'rgb(86 , 180, 233)',
-        'rgb(0  , 158, 115)',
-        'rgb(240, 228, 66)',
-        'rgb(0  , 114, 178)',
-        'rgb(213, 94 , 0)',
-        'rgb(204, 121, 167)'
-    ]
-    # Bang wong list of colourblindness friendly colours
-    # https://www.nature.com/articles/nmeth.1618
-    wong_cols = [
-        'rgb(51 , 34 , 136)',
-        'rgb(17 , 119, 51)',
-        'rgb(68 , 170, 153)',
-        'rgb(136, 204, 238)',
-        'rgb(221, 204, 119)',
-        'rgb(204, 102, 119)',
-        'rgb(170, 68 , 153)',
-        'rgb(136, 34 , 85)'
-    ]
-    # Default list of colours is plotly's safe colourlist
-    def_cols = pc.qualitative.Safe
+    print(type(fc_input), flush=True)
 
-    cols = def_cols + tol_cols + wong_cols
+    if fc_input == None:
+        fc = 0
+    else:
+        fc = fc_input
 
     data = []
-
-    curr_ymax = 0.
-    x = np.linspace(-20,20,1000)
-
     data.append(
         go.Scatter(
-            x = x,
-            y = x**2,
+            x = x*10**10,
+            y = (0.5*fc*x**2)/(1.98630 * 10**-23),
             line = dict(width = 2),
             name = 'Plot',
             hoverinfo = 'none',
-            marker={"color":cols[0]}
         )
     )
 
@@ -201,29 +214,21 @@ def vib_fig(vib_checklist):
                     'zeroline'  : False,
                     'showline'  : True,
                     'title' : {
-                        'text' : "Displacement",
-                        #"text" : 'Distance (a₀)',
-                        'font' :{'size' : 10} 
+                        'text' : "Displacement (" + u"\u212B" + ")"
                     },
                     'ticks' :'outside',
-                    'tickfont' :{'size' : 10},
                     'showticklabels' : True
                 },
                 yaxis = {
                     'autorange'  : True,
                     'showgrid'   : False,
                     'zeroline'   : False,
-                    'fixedrange' : True,
                     'title' :{
-                        'text' : 'Energy',
-                        'font' :{
-                            'size' : 10
-                        }
+                        'text' : "Energy (cm⁻¹)",
                     },
                     'title_standoff' : 100,
                     'showline' :True,
                     'ticks' :'outside',
-                    'tickfont' :{'size' : 10},
                     'showticklabels' :True
                 },
                 margin=dict(l=90, r=30, t=30, b=60),
@@ -234,4 +239,4 @@ def vib_fig(vib_checklist):
         "layout" : layout
     }
 
-    return output
+    return output, [button_label]
