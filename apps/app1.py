@@ -781,40 +781,34 @@ navbar = dbc.NavbarSimple(
     dark=True,
 )
 
-orb_graph = dcc.Graph(
+orb_graph = dbc.Spinner(children = dcc.Graph(
                     id='plot_area', 
                     style = {
                         'responsive' : 'true',
-                        'height' : '580px',
                         'automargin' : 'true'
                     }
-                )
+                ), size = 'lg', color='primary', type='border', fullscreen = True)
 
-orb_select = [dbc.Row(className="h-33", children =[
-        dbc.Col(
-            html.Div(
-                children=html.H4(
-                    style = {
-                        'textAlign' : 'center', 
-                        },
-                    children = 'Orbital'
+orb_select = [dbc.Row([
+                dbc.Col(
+                    html.H4(
+                        style = {
+                            'textAlign' : 'center', 
+                            },
+                        children = 'Orbital'
+                    )
+                ),
+                dbc.Col(
+                    html.H4(
+                        style = {
+                            'textAlign' : 'center', 
+                            },
+                        children = 'Function'
+                    )
                 )
-            )
-        ),
+        ]),
+    dbc.Row([
         dbc.Col(
-            html.Div(
-                children=html.H4(
-                    style = {
-                        'textAlign' : 'center', 
-                        },
-                    children = 'Function'
-                )
-            )
-        ),
-    ]),
-dbc.Row([
-    dbc.Col(
-        html.Div(
             children=[
                 dcc.Dropdown(id = 'orb_checklist', 
                     style = {
@@ -845,10 +839,8 @@ dbc.Row([
                     placeholder = "Orbital..."
                 )
             ]
-        )
-    ),
-    dbc.Col(
-        html.Div(
+        ),
+        dbc.Col(
             children=[
                 dcc.Dropdown(
                     id = 'function_type', 
@@ -876,8 +868,8 @@ dbc.Row([
                 )
             ]
         )
-    )
-])]
+    ])
+]
 
 orb_save = [
     dbc.Row([
@@ -916,14 +908,6 @@ orb_save = [
                             children = 'Output width'
                         )
                     ),
-            dbc.Col(
-                        html.P(
-                            style = {
-                                'textAlign' : 'center', 
-                            },
-                            children = 'Save format'
-                        )
-                    ),
         ]
     ),
     dbc.Row(
@@ -944,30 +928,44 @@ orb_save = [
                     value=500
                 )
             ),
-            dbc.Col(
-                dcc.Dropdown(
-                    id = 'save_format',
-                    options=[
-                        { 
-                         "label": 'svg', 
-                         "value": 'svg'
-                        },
-                        {
-                         "label": 'png',
-                         "value": 'png'
-                        },
-                        {
-                         "label": 'jpeg', 
-                         "value": 'jpeg'
-                        }
-                    ],
-                    value='svg',
-                    searchable=False,
-                    clearable=False
-                )
-            ),
         ]
     ),
+    dbc.Row([
+        dbc.Col(),
+        dbc.Col(
+            html.P(
+                style = {
+                    'textAlign' : 'center', 
+                },
+                children = 'Save format'
+            ),
+        )
+    ]), 
+    dbc.Row([
+        dbc.Col(),
+        dbc.Col(
+            dcc.Dropdown(
+                id = 'save_format',
+                options=[
+                    { 
+                     "label": 'svg', 
+                     "value": 'svg'
+                    },
+                    {
+                     "label": 'png',
+                     "value": 'png'
+                    },
+                    {
+                     "label": 'jpeg', 
+                     "value": 'jpeg'
+                    }
+                ],
+                value='svg',
+                searchable=False,
+                clearable=False
+            )
+        )
+    ]),      
     ]
 
 orb_customise_2d = [
@@ -980,14 +978,6 @@ orb_customise_2d = [
     ),
     dbc.Row(
         [
-            dbc.Col(
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Gridlines'
-                )
-            ),
             dbc.Col(
                 html.P(
                     style = {
@@ -1006,24 +996,9 @@ orb_customise_2d = [
             )
         ]
     ),
+
     dbc.Row(children=
         [
-            dbc.Col(
-                dcc.Checklist(
-                    id = 'gridlines',
-                    style = {
-                        'textAlign' : 'center', 
-                        'verticalAlign': 'middle',
-                        'horizontalAlign': 'middle'
-                    },
-                    options=[
-                        {"label": ' x', "value": 'x'},
-                        {"label": ' y', "value": 'y'}
-                    ],
-                    labelStyle={"display":"block"},
-                    value=[],
-                )
-            ),
             dbc.Col(
                 dbc.Input(
                     id = 'lower_x_in',
@@ -1033,7 +1008,6 @@ orb_customise_2d = [
                     max = 100,
                     value = 0,
                     style = {
-                        # 'width' : '50%',
                         'textAlign' : 'center', 
                         'verticalAlign': 'middle',
                         'horizontalAlign': 'middle'
@@ -1056,6 +1030,64 @@ orb_customise_2d = [
             )
         ]
     ),
+    dbc.Row([
+        dbc.Col(
+            html.P(
+                style = {
+                    'textAlign' : 'center', 
+                },
+                children = 'Gridlines'
+            )
+        ),
+        dbc.Col(
+            html.P(
+                style = {
+                    'textAlign' : 'center', 
+                },
+                children = 'Plot colours'
+            )
+        )
+    ]),
+    dbc.Row([
+        dbc.Col(
+            dcc.Checklist(
+                id = 'gridlines',
+                style = {
+                    'textAlign' : 'center', 
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                },
+                options=[
+                    {"label": ' x', "value": 'x'},
+                    {"label": ' y', "value": 'y'}
+                ],
+                labelStyle={"display":"block"},
+                value=[],
+            )
+        ),
+        dbc.Col(
+            dcc.Dropdown(
+                id = 'colours_2d',
+                options=[
+                        { 
+                         "label": 'Standard', 
+                         "value": 'normal'
+                        },
+                        {
+                         "label": 'Tol',
+                         "value": 'tol'
+                        },
+                        {
+                         "label": 'Wong', 
+                         "value": 'wong'
+                        }
+                ],
+                value='normal',
+                searchable=False,
+                clearable=False
+            )
+        ),
+    ]),
     dbc.Row(
         [
             dbc.Col(
@@ -1074,14 +1106,6 @@ orb_customise_2d = [
                     children = 'Text size'
                 )
             ),
-            dbc.Col(
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Plot colours'
-                )
-            )
         ]
     ),
     dbc.Row(
@@ -1102,28 +1126,6 @@ orb_customise_2d = [
                     max=25,
                     step=0.5,
                     value=19,
-                )
-            ),
-            dbc.Col(
-                dcc.Dropdown(
-                    id = 'colours_2d',
-                    options=[
-                            { 
-                             "label": 'Standard', 
-                             "value": 'normal'
-                            },
-                            {
-                             "label": 'Tol',
-                             "value": 'tol'
-                            },
-                            {
-                             "label": 'Wong', 
-                             "value": 'wong'
-                            }
-                    ],
-                    value='normal',
-                    searchable=False,
-                    clearable=False
                 )
             ),
         ]
@@ -1227,18 +1229,6 @@ orb_customise = [
 
 orb_options = orb_select + orb_customise + orb_save
 
-orb_body = dbc.Container(
-    dbc.Row(
-        [
-            dbc.Col(orb_graph, style={"height" : "100%"},className="h-100"),
-            dbc.Col(orb_options, style={"height" : "100%"},className="h-100"),
-        ],
-        className="h-100",
-    ),
-    style = {"height" : "100vh"}
-
-)
-
 footer = html.Footer(
     style = {
         'textAlign'       : 'center', 
@@ -1262,6 +1252,18 @@ footer = html.Footer(
     ]
 )
 
+orb_body = dbc.Container(
+    children=[
+        dbc.Row(
+            [
+                dbc.Col(orb_graph, xs=12, sm=12, md=6,lg=6,xl=6),
+                dbc.Col(orb_options, style={"align":"center"}, xs=12, sm=12, md=6,lg=6,xl=6),
+            ],
+            className="h-100"
+        )        ],
+    fluid=True
+)
+
 ##################################################################
 ########################## Webpage Main ##########################
 ##################################################################
@@ -1271,7 +1273,7 @@ layout = html.Div(
     children=[
         navbar,
         orb_body,
-        footer,
+        footer
     ]
 )
 
@@ -1695,7 +1697,12 @@ def orb_ax_2d(y_label, text_size, x_grid, y_grid, x_up, x_low):
 
 def orb_ax_3d(upper=0, lower=0):
 
+    camera = dict(
+        eye=dict(x=0.2, y=1.5, z=0.2)
+    )
+
     layout = go.Layout(
+        scene_camera=camera,
         hovermode=False,
         dragmode="orbit",
         scene_aspectmode='cube',
