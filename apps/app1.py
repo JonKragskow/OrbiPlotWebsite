@@ -9,6 +9,7 @@ import plotly.colors as pc
 import plotly.graph_objs as go
 import numpy as np
 import os
+import time
 
 from app import app
 
@@ -760,6 +761,7 @@ app.index_string = r'''
         <footer>
             {%config%}
             {%scripts%}
+            <script src="assets/3Dmol-min.js" async></script>
             {%renderer%}
         </footer>
     </body>
@@ -788,7 +790,7 @@ orb_graph = dcc.Graph(
                     }
                 )
 
-orb_select = [dbc.Row(children =[
+orb_select = [dbc.Row(className="h-33", children =[
         dbc.Col(
             html.Div(
                 children=html.H4(
@@ -1129,128 +1131,86 @@ orb_customise_2d = [
 ]
 
 orb_customise_3d = [ 
+    dbc.Row([
+        dbc.Col([
             html.H4(
-        style = {
-            'textAlign' : 'center', 
-        },
-        children = 'Plot Options'
-    ),
-
-    html.Div(
-        className = "container", 
-        style = {
-            'display' : 'grid',
-            'grid-template-columns': r'50% 50%',
-            'grid-template-rows' : r'50% 50%',
-            'justify-items' : 'center',
-            'align-items' : 'center'
-        },
-        children=[
-            html.Div(
-                className = "item", 
                 style = {
-                    'grid-column-start': '1',
-                    'grid-column-end': '2',
-                    'grid-row-start': '1',
-                    'grid-row-end': '2'
+                    'textAlign' : 'center', 
                 },
-                children=[
-                    html.P(
-                        style = {
-                            'textAlign' : 'center', 
-                        },
-                        children = 'Lobe Colours'
-                    )
-                ]    
-            ),
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '2',
-                    'grid-column-end': '3',
-                    'grid-row-start': '1',
-                    'grid-row-end': '2'
-                },
-                children=[
-                    html.P(
-                        style = {
-                            'textAlign' : 'center', 
-                        },
-                        children = 'Cutaway'
-                    )
-                ]
-            ),
-            html.Div(
-                className = "item", 
-                style = {
-                    'grid-column-start': '1',
-                    'grid-column-end': '2',
-                    'grid-row-start': '2',
-                    'grid-row-end': '3',
-                    'justify-self': 'stretch'
-                },
-                children=[
-                    dcc.Dropdown(
-                        id = 'colours_3d',
-                        options=[
-                                { 
-                                 "label": 'Yellow-Purple', 
-                                 "value": 'yp'
-                                },
-                                {
-                                 "label": 'Red-Blue',
-                                 "value": 'rb'
-                                },
-                                {
-                                 "label": 'Green-Orange', 
-                                 "value": 'go'
-                                }
-                        ],
-                        style = {}, 
-                        value='yp',
-                        searchable=False,
-                        clearable=False
-                    )
-                ]
-            ),
-            html.Div(className = "item", 
-                style = {
-                    'grid-column-start': '2',
-                    'grid-column-end': '3',
-                    'grid-row-start': '2',
-                    'grid-row-end': '3'
-                },
-                children=[
-                    dcc.RadioItems(id = 'cutaway_in', 
-                        style = {
-                            'textAlign' : 'center', 
-                            'verticalAlign': 'middle',
-                            'horizontalAlign': 'middle'
-                        },
-                        options=[
-                            {
-                             "label": '  None', 
-                             "value": 1.0
-                            },
-                            # {
-                            #  "label": '1/4',
-                            #  "value": 0.5
-                            # },
-                            {
-                             "label": '  1/2',
-                             "value": 0.
-                            },
-                        ],
-                        value=1.0,
-                        labelStyle={"display":"block"}
-                    )
-                ]
+                children = 'Plot Options'
             )
-
+        ])
+    ]),
+    dbc.Row(
+        [dbc.Col(
+            html.P(
+                style = {
+                    'textAlign' : 'center', 
+                },
+                children = 'Colours'
+            )
+        ),
+        dbc.Col(
+            html.P(
+                style = {
+                    'textAlign' : 'center', 
+                },
+                children = 'Cutaway'
+            )
+        )
         ]
-    )
+    ),
+    dbc.Row(
+        [dbc.Col(
+            dcc.Dropdown(
+                id = 'colours_3d',
+                options=[
+                        { 
+                         "label": 'Yellow-Purple', 
+                         "value": 'yp'
+                        },
+                        {
+                         "label": 'Red-Blue',
+                         "value": 'rb'
+                        },
+                        {
+                         "label": 'Green-Orange', 
+                         "value": 'go'
+                        }
+                ],
+                style = {}, 
+                value='yp',
+                searchable=False,
+                clearable=False
+            )
+        ),
+        dbc.Col(
+            dcc.RadioItems(id = 'cutaway_in', 
+                style = {
+                    'textAlign' : 'center', 
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                },
+                options=[
+                    {
+                     "label": '  None', 
+                     "value": 1.0
+                    },
+                    # {
+                    #  "label": '1/4',
+                    #  "value": 0.5
+                    # },
+                    {
+                     "label": '  1/2',
+                     "value": 0.
+                    },
+                ],
+                value=1.0,
+                labelStyle={"display":"block"}
+            )
+        )
+    ])
 ]
-
 
 orb_customise = [
     html.Div(
@@ -1267,11 +1227,16 @@ orb_customise = [
 
 orb_options = orb_select + orb_customise + orb_save
 
-orb_body = dbc.Row(
-    [
-        dbc.Col(orb_graph),
-        dbc.Col(orb_options),
-    ]
+orb_body = dbc.Container(
+    dbc.Row(
+        [
+            dbc.Col(orb_graph, style={"height" : "100%"},className="h-100"),
+            dbc.Col(orb_options, style={"height" : "100%"},className="h-100"),
+        ],
+        className="h-100",
+    ),
+    style = {"height" : "100vh"}
+
 )
 
 footer = html.Footer(
@@ -1429,7 +1394,6 @@ def orb_checklist(wf_type):
 ############################ Callback ############################
 ##################################################################
 
-
 #Callback which defines what changes (e.g. the plot) and what causes 
 # the change (e.g. a checkbox being pressed)
 
@@ -1522,10 +1486,8 @@ def orb_fig(orbitals, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, c
         y_grid = False
 
     y_labels = {
-        "RDF" : r'$\text{Radial Distribution Function}  \ \ \ 4\pi r^2 R(r)^2$',
-        #"RDF" : 'Radial Distribution Function 4πr²R(r)²',
-        "RWF" : r'$\text{Radial Wavefunction}  \ \ \ R(r) $\n'
-        #"RWF" : 'Radial Wavefunction R(r)'
+        "RDF" : "Radial distribution function 4𝜋𝑟²𝑅(𝑟)²",
+        "RWF" : "Radial wavefunction 𝑅(𝑟)"
     }
 
     if "3" in wf_type:
@@ -1695,8 +1657,7 @@ def orb_ax_2d(y_label, text_size, x_grid, y_grid, x_up, x_low):
                     'showline'  : True,
                     'range'     : [x_low, x_up],
                     'title' : {
-                        'text' : r"$\mathrm{Distance} \ (a_0)$",
-                        #"text" : 'Distance (a₀)',
+                        'text' : "Distance (𝑎₀)",
                         'font' :{'size' : text_size} 
                     },
                     'ticks' :'outside',
