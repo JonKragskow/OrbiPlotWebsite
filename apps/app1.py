@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import dash 
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -9,9 +10,12 @@ import plotly.colors as pc
 import plotly.graph_objs as go
 import numpy as np
 import os
+import io
 import time
-
+import flask
+from flask import send_file
 from app import app
+import urllib.parse
 
 def p_z_ax(n,r,f,c):
     return n*np.exp(r/n)*c*np.sqrt(np.pi/3.)/abs(f)
@@ -254,7 +258,6 @@ def name_to_qn(orb):
         n (integer)  :: principal quantum number
         l (integer)  :: azimuthal quantum number
     """
-    print(orb, flush=True)
     n = int(orb[0])
     l = orb[1]
 
@@ -836,10 +839,10 @@ orb_select_3d = dcc.Dropdown(id = 'orb_select_3d',
                         {"label": "4p", "value": "4p"},
                         {"label": "5p", "value": "5p"},
                         {"label": "6p", "value": "6p"},
-                        {"label": "3dz²", "value": "3d_z2"},
-                        {"label": "4dz²", "value": "4d_z2"},
-                        {"label": "5dz²", "value": "5d_z2"},
-                        {"label": "6dz²", "value": "6d_z2"},
+                        {"label": "3dz²", "value": "3dz2"},
+                        {"label": "4dz²", "value": "4dz2"},
+                        {"label": "5dz²", "value": "5dz2"},
+                        {"label": "6dz²", "value": "6dz2"},
                         {"label": "3dxy", "value": "3dxy"},
                         {"label": "4dxy", "value": "4dxy"},
                         {"label": "5dxy", "value": "5dxy"},
@@ -935,7 +938,7 @@ orb_save = [
                 id = "save_options_header"
             ),
             dbc.Tooltip(
-                children="Use the camera button in the top right of the plot to save",
+                children="Use the camera button in the top right of the plot to save an image",
                 target="save_options_header",
                 style = {
                     'textAlign' : 'center', 
@@ -946,80 +949,123 @@ orb_save = [
     dbc.Row(
         [
             dbc.Col(
-                        html.P(
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("Output height", addon_type="prepend"),
+                        dbc.Input(
+                            id = 'save_height_in',
+                            placeholder=500,
+                            type='number',
+                            value=500,
                             style = {
                                 'textAlign' : 'center', 
-                            },
-                            children = 'Output height'
-                        )
-                    ),
+                                'verticalAlign': 'middle',
+                                'horizontalAlign': 'middle'
+                            }
+                        ),
+                        dbc.InputGroupAddon("px", addon_type="append"),
+                    ],
+                    className="mb-3",
+                ),
+            ),
             dbc.Col(
-                        html.P(
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("Output width", addon_type="prepend"),
+                        dbc.Input(
+                            id = 'save_width_in',
+                            placeholder=500,
+                            type='number',
+                            value=500,
                             style = {
                                 'textAlign' : 'center', 
-                            },
-                            children = 'Output width'
-                        )
-                    ),
-        ]
-    ),
-    dbc.Row(
-        [
-            dbc.Col(
-                dbc.Input(
-                    id = 'save_height_in',
-                    placeholder=500,
-                    type='number',
-                    value=500
-                )
-            ),
-            dbc.Col(
-                dbc.Input(
-                    id = 'save_width_in',
-                    placeholder=500,
-                    type='number',
-                    value=500
-                )
-            ),
-        ]
-    ),
-    dbc.Row([
-        dbc.Col(),
-        dbc.Col(
-            html.P(
-                style = {
-                    'textAlign' : 'center', 
-                },
-                children = 'Save format'
-            ),
-        )
-    ]), 
-    dbc.Row([
-        dbc.Col(),
-        dbc.Col(
-            dcc.Dropdown(
-                id = 'save_format',
-                options=[
-                    { 
-                     "label": 'svg', 
-                     "value": 'svg'
-                    },
-                    {
-                     "label": 'png',
-                     "value": 'png'
-                    },
-                    {
-                     "label": 'jpeg', 
-                     "value": 'jpeg'
-                    }
-                ],
-                value='svg',
-                searchable=False,
-                clearable=False
+                                'verticalAlign': 'middle',
+                                'horizontalAlign': 'middle'
+                            }
+                        ),
+                        dbc.InputGroupAddon("px", addon_type="append"),
+                    ],
+                    className="mb-3",
+                ),
             )
-        )
-    ]),      
-    ]
+        ]
+    ),
+    dbc.Row([
+        dbc.Col(
+            dbc.InputGroup(
+                [
+                    dbc.InputGroupAddon("Data format", addon_type="prepend"),
+                    dcc.Dropdown(
+                        id = 'data_format',
+                        style = {
+                            'textAlign' : 'center',
+                            'display': 'block'
+                        },
+                        options =[
+                            {
+                            "label":"csv",
+                            "value":"csv"
+                            },
+                            {
+                            "label":"raw",
+                            "value":"raw"
+                            }
+                        ], 
+                        value="raw"
+                    )
+                ],
+                className="mb-3",
+            ),
+        ),
+        dbc.Col(
+            
+            html.Div( 
+                id = "download_link_box",
+                children = [
+                    html.A(
+                        'Download Data',
+                        id='download_link',
+                        download="waveplot_data.dat",
+                        href="",
+                        target="_blank"
+                    )], 
+                style = {}
+            ),
+
+        ),
+        dbc.Col(
+            dbc.InputGroup(
+                [
+                    dbc.InputGroupAddon("Plot format", addon_type="prepend"),
+                    dcc.Dropdown(
+                        id = 'save_format',
+                        style = {
+                            'textAlign' : 'center',
+                            'display': 'block'
+                        },
+                        options=[
+                            { 
+                             "label": 'svg', 
+                             "value": 'svg'
+                            },
+                            {
+                             "label": 'png',
+                             "value": 'png'
+                            },
+                            {
+                             "label": 'jpeg', 
+                             "value": 'jpeg'
+                            }
+                        ],
+                        value='svg',
+                        searchable=False,
+                        clearable=False
+                    )
+                ],
+                className="mb-3",
+            ),
+        ) 
+    ])]
 
 orb_customise_2d = [
     dbc.Row(
@@ -1029,57 +1075,50 @@ orb_customise_2d = [
                     children = 'Plot Options')
                 )
     ),
-    dbc.Row(
-        [
-            dbc.Col(
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Lower x limit'
-                )
-            ),
-            dbc.Col(
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Upper x limit'
-                )
-            )
-        ]
-    ),
 
     dbc.Row(children=
         [
             dbc.Col(
-                dbc.Input(
-                    id = 'lower_x_in',
-                    placeholder = 0,
-                    type = 'number',
-                    min = -10,
-                    max = 100,
-                    value = 0,
-                    style = {
-                        'textAlign' : 'center', 
-                        'verticalAlign': 'middle',
-                        'horizontalAlign': 'middle'
-                    }
-                )
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("Lower x limit", addon_type="prepend"),
+                        dbc.Input(
+                            id = 'lower_x_in',
+                            placeholder = 0,
+                            type = 'number',
+                            min = -10,
+                            max = 100,
+                            value = 0,
+                            style = {
+                                'textAlign' : 'center', 
+                                'verticalAlign': 'middle',
+                                'horizontalAlign': 'middle'
+                            }
+                        )
+                    ],
+                    className="mb-3",
+                ),
             ),
             dbc.Col(
-                dbc.Input(
-                    id = 'upper_x_in',
-                    placeholder = 100,
-                    type = 'number',
-                    max = 100,
-                    value = 100,
-                    style = {
-                        'textAlign' : 'center', 
-                        'verticalAlign': 'middle',
-                        'horizontalAlign': 'middle'
-                    }
-                )
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("Upper x limit", addon_type="prepend"),
+                        dbc.Input(
+                            id = 'upper_x_in',
+                            placeholder = 100,
+                            type = 'number',
+                            min = 0,
+                            max = 100,
+                            value = 100,
+                            style = {
+                                'textAlign' : 'center', 
+                                'verticalAlign': 'middle',
+                                'horizontalAlign': 'middle'
+                            }
+                        )
+                    ],
+                    className="mb-3",
+                ),
             )
         ]
     ),
@@ -1097,7 +1136,7 @@ orb_customise_2d = [
                 style = {
                     'textAlign' : 'center', 
                 },
-                children = 'Plot colours'
+                children = 'Colour Palette'
             )
         )
     ]),
@@ -1107,20 +1146,23 @@ orb_customise_2d = [
                 id = 'gridlines',
                 style = {
                     'textAlign' : 'center', 
-                    'verticalAlign': 'middle',
-                    'horizontalAlign': 'middle'
+
                 },
                 options=[
                     {"label": ' x', "value": 'x'},
                     {"label": ' y', "value": 'y'}
                 ],
-                labelStyle={"display":"block"},
+                labelStyle={"display":"inline-block","margin-right": "20px"},
                 value=[],
             )
         ),
         dbc.Col(
             dcc.Dropdown(
                 id = 'colours_2d',
+                style = {
+                    'textAlign' : 'center',
+                    'display': 'block'
+                },
                 options=[
                         { 
                          "label": 'Standard', 
@@ -1144,42 +1186,47 @@ orb_customise_2d = [
     dbc.Row(
         [
             dbc.Col(
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Line width'
-                )
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("Linewidth", addon_type="prepend"),
+                        dbc.Input(
+                            id = 'linewidth_slider',
+                            placeholder = 5,
+                            type = 'number',
+                            min=1,
+                            max=10,
+                            value=5,
+                            style = {
+                                'textAlign' : 'center', 
+                                'verticalAlign': 'middle',
+                                'horizontalAlign': 'middle'
+                            }
+                        )
+                    ],
+                className="mb-3",
+                ),
+
             ),
             dbc.Col(
-                html.P(
-                    style = {
-                        'textAlign' : 'center', 
-                    },
-                    children = 'Text size'
-                )
-            ),
-        ]
-    ),
-    dbc.Row(
-        [
-            dbc.Col(
-                dcc.Slider(
-                    id = 'linewidth_slider',
-                    min=1,
-                    max=10,
-                    step=0.5,
-                    value=5,
-                )
-            ),
-            dbc.Col(
-                dcc.Slider(
-                    id = 'text_size_slider',
-                    min=15,
-                    max=25,
-                    step=0.5,
-                    value=19,
-                )
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("Text size", addon_type="prepend"),
+                        dbc.Input(
+                            id = 'text_size_slider',
+                            placeholder = 19,
+                            type = 'number',
+                            min=15,
+                            max=25,
+                            value=19,
+                            style = {
+                                'textAlign' : 'center', 
+                                'verticalAlign': 'middle',
+                                'horizontalAlign': 'middle'
+                            }
+                        )
+                    ],
+                className="mb-3",
+                ),
             ),
         ]
     )
@@ -1395,32 +1442,34 @@ def display_3d(wf_type) :
 # the change (e.g. a checkbox being pressed)
 
 orbitals_input = [ddep.Input('orb_select_2d', "value"),
-               ddep.Input('orb_select_3d', "value"),
-               ddep.Input('function_type', "value"), 
-               ddep.Input('linewidth_slider',"value"), 
-               ddep.Input('text_size_slider',"value"), 
-               ddep.Input('gridlines',"value"), 
-               ddep.Input('upper_x_in', "value"),
-               ddep.Input('lower_x_in', "value"),
-               ddep.Input('save_format', "value"), 
-               ddep.Input('save_height_in', "value"),
-               ddep.Input('save_width_in', "value"),
-               ddep.Input('colours_2d',"value"),
-               ddep.Input('colours_3d',"value"),
-               ddep.Input('cutaway_in',"value")]
+               ddep.Input("orb_select_3d", "value"),
+               ddep.Input("function_type", "value"), 
+               ddep.Input("linewidth_slider","value"), 
+               ddep.Input("text_size_slider","value"), 
+               ddep.Input("gridlines","value"), 
+               ddep.Input("upper_x_in", "value"),
+               ddep.Input("lower_x_in", "value"),
+               ddep.Input("save_format", "value"), 
+               ddep.Input("save_height_in", "value"),
+               ddep.Input("save_width_in", "value"),
+               ddep.Input("colours_2d","value"),
+               ddep.Input("colours_3d","value"),
+               ddep.Input("cutaway_in","value"),
+               ddep.Input("data_format","value")]
 
-@app.callback([ddep.Output('plot_area', 'figure'),
-               ddep.Output('plot_area', 'config'),
-               ddep.Output('orb_customise_2d', 'style'),
-               ddep.Output('orb_customise_3d', 'style'),
-               ddep.Output('orb_select_2d_container', "style"),
-               ddep.Output('orb_select_3d_container', "style")],
+@app.callback([ddep.Output("plot_area", "figure"),
+               ddep.Output("plot_area", "config"),
+               ddep.Output("orb_customise_2d", "style"),
+               ddep.Output("orb_customise_3d", "style"),
+               ddep.Output("orb_select_2d_container", "style"),
+               ddep.Output("orb_select_3d_container", "style"),
+               ddep.Output("download_link", "href"),
+               ddep.Output("download_link_box", "style")],
                orbitals_input
               )
-
 def update_app(orbitals_2d, orbitals_3d, wf_type, linewidth, text_size, gridlines,
                x_up, x_low, save_format, save_height, save_width, 
-               colours_2d, colours_3d, cutaway):
+               colours_2d, colours_3d, cutaway, data_format):
     """
     Updates the app, given the current state of the UI
     All inputs correspond (in the same order) to the list 
@@ -1451,12 +1500,32 @@ def update_app(orbitals_2d, orbitals_3d, wf_type, linewidth, text_size, gridline
 
     """
 
-    return [orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size),
-    orb_modebar(save_format, save_height, save_width, wf_type, orbitals_2d, orbitals_3d),
-    display_2d(wf_type), 
-    display_3d(wf_type), 
-    display_2d(wf_type), 
-    display_3d(wf_type)]
+    
+    if wf_type != "3DWF":
+        full_data, fig = orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size)
+        data_header = "{} Data generated by waveplot.com \n x (a0),  ".format(wf_type)
+        for orb in orbitals_2d:
+            data_header += "{}, ".format(orb)
+        s = io.StringIO()
+        np.savetxt(s, np.transpose(full_data), header=data_header)
+        s = "data:text/csv;charset=utf-8," + urllib.parse.quote(s.getvalue())
+
+    else:
+        _, fig = orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size)
+        s = ''
+
+    result = [
+        fig,
+        orb_modebar(save_format, save_height, save_width, wf_type, orbitals_2d, orbitals_3d),
+        display_2d(wf_type), 
+        display_3d(wf_type), 
+        display_2d(wf_type), 
+        display_3d(wf_type), 
+        s,
+        display_2d(wf_type),
+    ]
+
+    return result
 
 def orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2d, colours_3d, cutaway, gridlines, text_size):
 
@@ -1467,15 +1536,13 @@ def orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2
     elif "3DWF" in wf_type:
         orbitals = orbitals_3d
 
-    print(wf_type, orbitals, flush=True)
-
     # Nothing to plot - exit
-    if len(orbitals) == 0:
+    if len(orbitals) == 0 or orbitals == None:
         output = {
-            'data'   : None,
-            'layout' : ax_null()
+            "data"   : None,
+            "layout" : ax_null()
             }
-        return output
+        return [], output
 
     # Set limits to default if needed
     if x_low == None or x_low < 0:
@@ -1483,14 +1550,17 @@ def orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2
     if x_up == None:
         x_up = x_low + 100
 
+    if text_size == None or text_size <= 3:
+        text_size = 19
+
     #Turn on x axis gridlines
-    if 'x' in gridlines:
+    if "x" in gridlines:
         x_grid = True
     else:
         x_grid = False
 
     #Turn on y axis gridlines
-    if 'y' in gridlines:
+    if "y" in gridlines:
         y_grid = True
     else:
         y_grid = False
@@ -1503,16 +1573,17 @@ def orb_fig(orbitals_2d, orbitals_3d, x_up, x_low, wf_type, linewidth, colours_2
     if "3" in wf_type:
         data, x_up, x_low = orb_plot_3d(orbitals, colours_3d, cutaway)
         layout = orb_ax_3d(x_up, x_low)
+        full_data = []
     else:
         layout = orb_ax_2d(y_labels[wf_type], text_size, x_grid, y_grid, x_up, x_low)
-        data = orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d)
+        full_data, data = orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d)
 
     output = {
         "data" : data,
         "layout" : layout
     }
 
-    return output
+    return full_data, output
 
 def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
 
@@ -1520,33 +1591,33 @@ def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
     # Paul Tol list of colourblindness friendly colours
     # https://personal.sron.nl/~pault/
     tol_cols = [
-        'rgb(0  , 0  , 0)',
-        'rgb(230, 159, 0)',
-        'rgb(86 , 180, 233)',
-        'rgb(0  , 158, 115)',
-        'rgb(240, 228, 66)',
-        'rgb(0  , 114, 178)',
-        'rgb(213, 94 , 0)',
-        'rgb(204, 121, 167)'
+        "rgb(0  , 0  , 0)",
+        "rgb(230, 159, 0)",
+        "rgb(86 , 180, 233)",
+        "rgb(0  , 158, 115)",
+        "rgb(240, 228, 66)",
+        "rgb(0  , 114, 178)",
+        "rgb(213, 94 , 0)",
+        "rgb(204, 121, 167)"
     ]
     # Bang wong list of colourblindness friendly colours
     # https://www.nature.com/articles/nmeth.1618
     wong_cols = [
-        'rgb(51 , 34 , 136)',
-        'rgb(17 , 119, 51)',
-        'rgb(68 , 170, 153)',
-        'rgb(136, 204, 238)',
-        'rgb(221, 204, 119)',
-        'rgb(204, 102, 119)',
-        'rgb(170, 68 , 153)',
-        'rgb(136, 34 , 85)'
+        "rgb(51 , 34 , 136)",
+        "rgb(17 , 119, 51)",
+        "rgb(68 , 170, 153)",
+        "rgb(136, 204, 238)",
+        "rgb(221, 204, 119)",
+        "rgb(204, 102, 119)",
+        "rgb(170, 68 , 153)",
+        "rgb(136, 34 , 85)"
     ]
-    # Default list of colours is plotly's safe colourlist
+    # Default list of colours is plotly"s safe colourlist
     def_cols = pc.qualitative.Safe
 
-    if colours_2d == 'tol':
+    if colours_2d == "tol":
         cols = tol_cols + wong_cols + def_cols
-    elif colours_2d == 'wong':
+    elif colours_2d == "wong":
         cols = wong_cols + def_cols + tol_cols
     else:
         cols = def_cols + tol_cols + wong_cols
@@ -1556,22 +1627,27 @@ def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
     curr_ymax = 0.
     x = np.linspace(x_low,x_up,1000)
 
+    full_data = []
+    full_data.append(x)
+
     # Plot each requested function
     for it, orbital in enumerate(orbitals):
         # Get orbital n value and name
         n, l = name_to_qn(orbital)
 
-        if l == 's':
+        if l == "s":
             y = calc_radial_s(n, x, wf_type)
 
-        elif l == 'p':
+        elif l == "p":
             y = calc_radial_p(n, x, wf_type)
 
-        elif l == 'd':  
+        elif l == "d":  
             y = calc_radial_d(n, x, wf_type)
 
-        elif l == 'f':
+        elif l == "f":
             y = calc_radial_f(n, x, wf_type)
+
+        full_data.append(y)
 
         traces.append(
             go.Scatter(
@@ -1579,12 +1655,12 @@ def orb_plot_2d(orbitals, x_up, x_low, wf_type, linewidth, colours_2d):
                 y = y,
                 line = dict(width = linewidth),
                 name = orbital,
-                hoverinfo = 'none',
+                hoverinfo = "none",
                 marker={"color":cols[it]}
             )
         )
 
-    return traces
+    return full_data, traces
 
 
 def orb_plot_3d(orb_name, colour_name, cutaway):
@@ -1607,17 +1683,17 @@ def orb_plot_3d(orb_name, colour_name, cutaway):
     # Get orbital n value and name
     n, l = name_to_qn(orb_name)
 
-    if l == 's':
+    if l == "s":
 
         x, y, z, wav, upper, lower, ival = calc_s_orb(n, cutaway)
 
-    elif l == 'p':
+    elif l == "p":
 
         data, upper, lower= plot_p_orb(n, cutaway, colours)
 
-    elif l == 'd':  
+    elif l == "d":  
 
-        if 'xy' in orb_name:
+        if "xy" in orb_name:
 
             x, y, z, wav, upper, lower, ival = calc_dxy_orb(n, cutaway)
 
@@ -1625,14 +1701,14 @@ def orb_plot_3d(orb_name, colour_name, cutaway):
 
             x, y, z, wav, upper, lower, ival = calc_dz_orb(n, cutaway)
 
-    elif l == 'f':
+    elif l == "f":
 
-        if 'xyz' in orb_name:
+        if "xyz" in orb_name:
 
             x, y, z, wav, upper, lower, ival = calc_fxyz_orb(n, cutaway)
 
 
-        elif 'yz2' in orb_name:
+        elif "yz2" in orb_name:
 
             x, y, z, wav, upper, lower, ival = calc_fyz2_orb(n, cutaway)
 
@@ -1661,41 +1737,41 @@ def orb_ax_2d(y_label, text_size, x_grid, y_grid, x_up, x_low):
 
     layout = go.Layout(
                 xaxis = {
-                    'autorange' : True,
-                    'showgrid'  : x_grid,
-                    'zeroline'  : False,
-                    'showline'  : True,
-                    'range'     : [x_low, x_up],
-                    'title' : {
-                        'text' : "Distance (𝑎₀)",
-                        'font' :{'size' : text_size} 
+                    "autorange" : True,
+                    "showgrid"  : x_grid,
+                    "zeroline"  : False,
+                    "showline"  : True,
+                    "range"     : [x_low, x_up],
+                    "title" : {
+                        "text" : "Distance (𝑎₀)",
+                        "font" :{"size" : text_size} 
                     },
-                    'ticks' :'outside',
-                    'tickfont' :{'size' : text_size},
-                    'showticklabels' : True
+                    "ticks" :"outside",
+                    "tickfont" :{"size" : text_size},
+                    "showticklabels" : True
                 },
                 yaxis = {
-                    'autorange'  : True,
-                    'showgrid'   : y_grid,
-                    'zeroline'   : False,
-                    'fixedrange' : True,
-                    'title' :{
-                        'text' : y_label,
-                        'font' :{
-                            'size' : text_size
+                    "autorange"  : True,
+                    "showgrid"   : y_grid,
+                    "zeroline"   : False,
+                    "fixedrange" : True,
+                    "title" :{
+                        "text" : y_label,
+                        "font" :{
+                            "size" : text_size
                         }
                     },
-                    'title_standoff' : 100,
-                    'showline' :True,
-                    'ticks' :'outside',
-                    'tickfont' :{'size' : text_size},
-                    'showticklabels' :True
+                    "title_standoff" : 100,
+                    "showline" :True,
+                    "ticks" :"outside",
+                    "tickfont" :{"size" : text_size},
+                    "showticklabels" :True
                 },
                 legend = {
-                    'x' : 0.8,
-                    'y' : 1,
-                    'font' :{
-                        'size' : text_size - 3
+                    "x" : 0.8,
+                    "y" : 1,
+                    "font" :{
+                        "size" : text_size - 3
                     }
                 },
                 margin=dict(l=90, r=30, t=30, b=60),
