@@ -776,22 +776,27 @@ navbar = dbc.NavbarSimple(
     id = "navbar",
     children=[
         dbc.NavItem(dbc.NavLink(id= "orb_tab", children = "Orbitals", href="/apps/app1", active=True)),
-        dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2")),
-        dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3")),
+        #dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2")),
+        #dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3")),
     ],
     brand="Waveplot",
     brand_href="/apps/app1",
     color="primary",
     dark=True,
+    style={"height":"10%"}
 )
 
-orb_graph = dbc.Spinner(children = dcc.Graph(
+orb_graph = dcc.Loading(children = 
+                    dcc.Graph(
                     id='plot_area', 
                     style = {
                         'responsive' : 'true',
-                        'automargin' : 'true'
+                        'automargin' : 'true',
+                        "height": "95%"
                     }
-                ), size = 'lg', color='primary', type='border', fullscreen = True)
+                    )
+                    , color='primary', type='graph', fullscreen = True,  parent_style = {"height": "100%"}
+                )
 
 
 orb_select_2d = dcc.Dropdown(id = 'orb_select_2d', 
@@ -927,7 +932,7 @@ orb_select = [dbc.Row([
     ])
 ]
 
-orb_save = [
+orb_save = [html.Div([
     dbc.Row([
         dbc.Col([
             html.H4(
@@ -991,32 +996,32 @@ orb_save = [
         ]
     ),
     dbc.Row([
-        dbc.Col(
-            dbc.InputGroup(
-                [
-                    dbc.InputGroupAddon("Data format", addon_type="prepend"),
-                    dcc.Dropdown(
-                        id = 'data_format',
-                        style = {
-                            'textAlign' : 'center',
-                            'display': 'block'
-                        },
-                        options =[
-                            {
-                            "label":"csv",
-                            "value":"csv"
-                            },
-                            {
-                            "label":"raw",
-                            "value":"raw"
-                            }
-                        ], 
-                        value="raw"
-                    )
-                ],
-                className="mb-3",
-            ),
-        ),
+        #dbc.Col(
+        #     dbc.InputGroup(
+        #         [
+        #             dbc.InputGroupAddon("Data format", addon_type="prepend"),
+        #             dcc.Dropdown(
+        #                 id = 'data_format',
+        #                 style = {
+        #                     'textAlign' : 'center',
+        #                     'display': 'block'
+        #                 },
+        #                 options =[
+        #                     {
+        #                     "label":"csv",
+        #                     "value":"csv"
+        #                     },
+        #                     {
+        #                     "label":"raw",
+        #                     "value":"raw"
+        #                     }
+        #                 ], 
+        #                 value="raw"
+        #             )
+        #         ],
+        #         className="mb-3",
+        #     ),
+        # ),
         dbc.Col(
             
             html.Div( 
@@ -1034,38 +1039,34 @@ orb_save = [
 
         ),
         dbc.Col(
-            dbc.InputGroup(
-                [
-                    dbc.InputGroupAddon("Plot format", addon_type="prepend"),
-                    dcc.Dropdown(
-                        id = 'save_format',
-                        style = {
-                            'textAlign' : 'center',
-                            'display': 'block'
-                        },
-                        options=[
-                            { 
-                             "label": 'svg', 
-                             "value": 'svg'
-                            },
-                            {
-                             "label": 'png',
-                             "value": 'png'
-                            },
-                            {
-                             "label": 'jpeg', 
-                             "value": 'jpeg'
-                            }
-                        ],
-                        value='svg',
-                        searchable=False,
-                        clearable=False
-                    )
+            dcc.Dropdown(
+                id = 'save_format',
+                style = {
+                    'textAlign' : 'center',
+                    'horizontalAlign': 'center',
+                    'display': 'block',
+                    "width":"50%"
+                },
+                options=[
+                    { 
+                     "label": 'svg', 
+                     "value": 'svg'
+                    },
+                    {
+                     "label": 'png',
+                     "value": 'png'
+                    },
+                    {
+                     "label": 'jpeg', 
+                     "value": 'jpeg'
+                    }
                 ],
-                className="mb-3",
-            ),
+                value='svg',
+                searchable=False,
+                clearable=False
+            )
         ) 
-    ])]
+    ])], className="pt-5",)]
 
 orb_customise_2d = [
     dbc.Row(
@@ -1318,12 +1319,14 @@ orb_customise = [
     html.Div(
         id = "orb_customise_2d",
         children = orb_customise_2d,
-        style = {}
+        style = {},
+        className="pt-5",
     ),
     html.Div(
         id = "orb_customise_3d",
         children = orb_customise_3d,
-        style = {}
+        style = {},
+        className="pt-5",
     )]
             
 
@@ -1334,34 +1337,40 @@ footer = html.Footer(
         'textAlign'       : 'center', 
         'font-size'       : 'smaller',
         'color'           : 'white',
-        'background-color': '#307cf6'
+        'background-color': '#307cf6',
+        "height":"5%",
+        'whiteSpace': 'pre-wrap'
     }, 
     children=[
         html.P(
             children = [
-            'Jon Kragskow'
+                'Jon Kragskow \n', 
+                html.A(
+                    href = 'https://www.kragskow.com/',
+                    style = {
+                        'color':'white'
+                    },
+                    children = 'https://www.kragskow.com/'
+                )
             ]
         ),
-        html.A(
-            href = 'https://www.kragskow.com/',
-            style = {
-                'color':'white'
-            },
-            children = 'https://www.kragskow.com/'
-        )
     ]
 )
 
-orb_body = dbc.Container(
+orb_page = dbc.Container(
     children=[
+        navbar,
         dbc.Row(
             [
-                dbc.Col(orb_graph, xs=12, sm=12, md=6,lg=6,xl=6),
-                dbc.Col(orb_options, style={"align":"center"}, xs=12, sm=12, md=6,lg=6,xl=6),
+                dbc.Col(orb_graph, xs=12, sm=12, md=6,lg=6,xl=6, style={"height" : "100%"}),
+                dbc.Col(orb_options, style={"align":"center","height" : "100%"}, xs=12, sm=12, md=6,lg=6,xl=6, className="pt-5"),
             ],
-            className="h-100"
-        )        ],
-    fluid=True
+            style= {"height": "85%"}
+        ),
+        footer
+    ],
+    fluid=True,
+    style= {"height": "100vh", "width" : "100vw"},
 )
 
 ##################################################################
@@ -1370,11 +1379,7 @@ orb_body = dbc.Container(
 
 # Layout of webpage
 layout = html.Div(
-    children=[
-        navbar,
-        orb_body,
-        footer
-    ]
+    children=orb_page
 )
 
 def toggle_pob(wf_type) :
@@ -1454,8 +1459,8 @@ orbitals_input = [ddep.Input('orb_select_2d', "value"),
                ddep.Input("save_width_in", "value"),
                ddep.Input("colours_2d","value"),
                ddep.Input("colours_3d","value"),
-               ddep.Input("cutaway_in","value"),
-               ddep.Input("data_format","value")]
+               ddep.Input("cutaway_in","value")]
+               #ddep.Input("data_format","value")]
 
 @app.callback([ddep.Output("plot_area", "figure"),
                ddep.Output("plot_area", "config"),
@@ -1469,7 +1474,7 @@ orbitals_input = [ddep.Input('orb_select_2d', "value"),
               )
 def update_app(orbitals_2d, orbitals_3d, wf_type, linewidth, text_size, gridlines,
                x_up, x_low, save_format, save_height, save_width, 
-               colours_2d, colours_3d, cutaway, data_format):
+               colours_2d, colours_3d, cutaway):
     """
     Updates the app, given the current state of the UI
     All inputs correspond (in the same order) to the list 
