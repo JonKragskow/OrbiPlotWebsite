@@ -5,15 +5,11 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash.dependencies as ddep
-import dash_defer_js_import as dji
 import plotly.colors as pc
 import plotly.graph_objs as go
 import numpy as np
 import os
 import io
-import time
-import flask
-from flask import send_file
 from app import app
 import urllib.parse
 
@@ -772,30 +768,61 @@ app.index_string = r'''
 </html>
 '''
 
-navbar = dbc.NavbarSimple(
-    id = "navbar",
-    children=[
-        dbc.NavItem(dbc.NavLink(id= "orb_tab", children = "Orbitals", href="/apps/app1", active=True)),
-        #dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2")),
-        #dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3")),
+# navbar = dbc.NavbarSimple(
+#     id = "navbar",
+#     children=[
+#         dbc.NavItem(dbc.NavLink(id= "orb_tab", children = "Orbitals", href="/apps/app1", active=True)),
+#         #dbc.NavItem(dbc.NavLink(id= "vib_tab", children = "Vibrations", href="/apps/app2")),
+#         #dbc.NavItem(dbc.NavLink(id= "trans_tab", children = "Translations", href="/apps/app3")),
+#     ],
+#     brand="Waveplot",
+#     brand_href="/apps/app1",
+#     color="primary",
+#     dark=True,
+#     style={"height":"10%"}
+# )
+
+nav = dbc.Nav(
+    [
+        dbc.NavItem(dbc.NavLink("Orbitals", active=True, href="#"),
+                                style={
+                                    "color":"#307cff",
+                                    #"background-color":"white"
+                                    }
+                                ),
+        dbc.NavItem(dbc.NavLink("Vibrations", href="#",style={"color":"white"})),
+        dbc.NavItem(dbc.NavLink("Rotations", href="#",style={"color":"white"})),
+        dbc.NavItem(dbc.NavLink("Lanthanides", href="#",style={"color":"white"})),
     ],
-    brand="Waveplot",
-    brand_href="/apps/app1",
-    color="primary",
-    dark=True,
-    style={"height":"10%"}
+    className="mr-auto",
+    pills=True
 )
 
-orb_graph = dcc.Loading(children = 
-                    dcc.Graph(
-                    id='plot_area', 
-                    style = {
-                        'responsive' : 'true',
-                        'automargin' : 'true',
-                        "height": "95%"
-                    }
-                    )
-                    , color='primary', type='graph', fullscreen = True,  parent_style = {"height": "100%"}
+navbar = dbc.Navbar(
+    [
+        html.A(
+            # Use row and col to control vertical alignment of logo / brand
+            dbc.Row(
+                [
+                    dbc.NavbarBrand("Waveplot", className="ml-2")
+                ],
+                align="center",
+                no_gutters=True,
+            ),
+            href="",
+        ),
+        nav
+    ],
+    color="primary",
+    dark=True,
+)
+
+orb_graph = dcc.Loading(
+                dcc.Graph(id='plot_area',style={"height":"100%"}),
+                color='primary',
+                type='graph',
+                fullscreen=True,
+                parent_style = {"height": "100%"}
                 )
 
 
@@ -1333,45 +1360,50 @@ orb_customise = [
 orb_options = orb_select + orb_customise + orb_save
 
 footer = html.Footer(
-    style = {
-        'textAlign'       : 'center', 
-        'font-size'       : 'smaller',
-        'color'           : 'white',
-        'background-color': '#307cf6',
-        "height":"5%",
-        'whiteSpace': 'pre-wrap'
-    }, 
+    className="footer_custom",
     children=[
-        html.P(
-            children = [
-                'Jon Kragskow \n', 
-                html.A(
-                    href = 'https://www.kragskow.com/',
-                    style = {
-                        'color':'white'
-                    },
-                    children = 'https://www.kragskow.com/'
-                )
-            ]
-        ),
-    ]
-)
-
-orb_page = dbc.Container(
-    children=[
-        navbar,
-        dbc.Row(
+        html.Div(
             [
-                dbc.Col(orb_graph, xs=12, sm=12, md=6,lg=6,xl=6, style={"height" : "100%"}),
-                dbc.Col(orb_options, style={"align":"center","height" : "100%"}, xs=12, sm=12, md=6,lg=6,xl=6, className="pt-5"),
-            ],
-            style= {"height": "85%"}
-        ),
+                html.A(
+                    "Jon Kragskow",
+                    href="https://www.kragskow.com",
+                    style={"margin-right": "20px",  "color": "white"}
+                    )
+            ]
+        )
+    ],
+    style={'whiteSpace': 'pre-wrap'}
+    )
+
+# Layout of webpage
+orb_page = html.Div(
+    children=[
+        html.Div([
+            navbar,
+            html.Div(
+                [
+                    html.Div(
+                        html.Div(
+                            children=[orb_graph],
+                            style={"height": "100%"}
+                        ),
+                        className="col-6",
+                        style={
+                            "aspect-ratio": "4/3",
+                            "max-height": "70vh",
+                            }
+                            ),
+                    html.Div(
+                        html.Div(orb_options),
+                        className="col-6",
+                    )
+                ], style={"margin-top": "10px"}
+            ),
+        ], className="wrap"),
         footer
     ],
-    fluid=True,
-    style= {"height": "100vh", "width" : "100vw"},
 )
+
 
 ##################################################################
 ########################## Webpage Main ##########################
